@@ -1,0 +1,11 @@
+name = "thalmor-clockin"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+GITHUB_REPO = "Mosalah992/Thalmor-HR-"
+GITHUB_WORKFLOW = "daily-sync.yml"
+
+# Secrets (set with `npx wrangler secret put <NAME>`):
+#   DISCORD_PUBLIC_KEY  - app public key from the Discord Developer Portal
+#   GITHUB_TOKEN        - fine-grained PAT, repo Thalmor-HR-, Actions: read+write
