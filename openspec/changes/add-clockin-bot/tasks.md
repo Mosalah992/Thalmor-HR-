@@ -5,7 +5,7 @@
 - [x] 1.1 Create GCP service account and provide the JSON key (saved to `credentials/`, git-ignored; auth + sheet read verified)
 - [x] 1.2 Share the roster sheet with `ancarion@thalmor.iam.gserviceaccount.com` as **Editor** (write verified)
 - [x] 1.3 Provide the Discord bot token (verified — logs in as "Thalmor Clock in")
-- [ ] 1.4 Grant the bot access to #clock-in: bot is in the server, but the channel is private → channel Settings → Permissions → add the bot/its role with **View Channel** + **Read Message History** (currently 403 Missing Access)
+- [x] 1.4 Grant the bot access to #clock-in (channel-level overwrite for the bot member; verified)
 - [x] 1.5 Provide the #clock-in channel ID (1511723933609754797; log channel: none, console-only summary)
 
 ## 2. Project scaffold
@@ -28,17 +28,18 @@
 ## 5. Sync entry point
 
 - [x] 5.1 Implement `src/sync.js`: scan → match → write → report pipeline, complete-scan-or-nothing abort, `--dry-run` flag
-- [ ] 5.2 Dry-run against the live channel and sheet; review intended writes (blocked by task 1.4 — verified clean abort with no writes)
+- [x] 5.2 Dry-run against the live channel and sheet; reviewed intended writes (127 cells, all H/I only)
 
 ## 6. First run & verification
 
-- [ ] 6.1 Execute the first real run — populates Last Active + Total Clock-ins for all matched members
-- [ ] 6.2 Spot-check 5 members against channel history; run twice to confirm idempotency
-- [ ] 6.3 Review unmatched-author list with the owner; fix column E typos
+- [x] 6.1 First real run executed 2026-07-07: 900 messages, 81 users, 63 roster rows populated (127 cells)
+- [x] 6.2 Read-back verified 6 sample rows + I3 header; second run wrote 0 cells (idempotent)
+- [ ] 6.3 Owner reviews the 18 unmatched authors; fix column E typos (likely: `@akuhidracul`→`akujidracul`, `@roselord`→`roserlord`, `@lireaper586`→`ltreaper586`)
 
 ## 7. Scheduling & docs
 
 - [x] 7.1 Owner picked scheduler: GitHub Actions on github.com/Mosalah992/Thalmor-HR-
 - [x] 7.2 Workflow `.github/workflows/daily-sync.yml` pushed: daily 04:00 UTC cron + manual workflow_dispatch with dry-run option
-- [ ] 7.3 Owner adds Actions secrets (DISCORD_TOKEN, CLOCKIN_CHANNEL_ID, SHEET_ID, GOOGLE_SERVICE_ACCOUNT_JSON, optional LOG_CHANNEL_ID) in repo Settings → Secrets and variables → Actions
+- [x] 7.3 Owner added Actions secrets (DISCORD_TOKEN, CLOCKIN_CHANNEL_ID, SHEET_ID, GOOGLE_SERVICE_ACCOUNT_JSON)
+- [ ] 7.5 Confirm the first scheduled/manual GitHub Actions run succeeds (Actions tab → Daily clock-in sync → Run workflow)
 - [x] 7.4 README written: setup, env vars, manual runs, summary
