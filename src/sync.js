@@ -94,7 +94,7 @@ async function main() {
   }
   const summary = lines.join('\n');
   console.log(`\n${summary}`);
-  if (logChannelId) {
+  if (logChannelId && !dryRun) {
     try {
       await postMessage(logChannelId, token, summary);
     } catch (e) {

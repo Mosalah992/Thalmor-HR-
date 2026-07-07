@@ -9,10 +9,6 @@ on:
         description: Dry run (print writes, do not modify the sheet)
         type: boolean
         default: false
-      log_channel:
-        description: Discord channel ID to post the report to (set by /scan and /sync)
-        type: string
-        default: ''
 
 concurrency:
   group: clockin-sync
@@ -42,6 +38,6 @@ jobs:
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           CLOCKIN_CHANNEL_ID: ${{ secrets.CLOCKIN_CHANNEL_ID }}
-          LOG_CHANNEL_ID: ${{ inputs.log_channel || secrets.LOG_CHANNEL_ID }}
+          LOG_CHANNEL_ID: ${{ secrets.LOG_CHANNEL_ID }}
           SHEET_ID: ${{ secrets.SHEET_ID }}
           GOOGLE_APPLICATION_CREDENTIALS: sa.json
