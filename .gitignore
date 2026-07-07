@@ -1,0 +1,8 @@
+# Secrets — never commit
+credentials/
+.env
+*.json.key
+state.json
+
+# Node
+node_modules/
