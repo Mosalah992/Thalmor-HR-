@@ -5,10 +5,13 @@ const { fetchAllMessages, postMessage } = require('./discord');
 const { getAccessToken, getTabTitle, readRoster, batchWrite } = require('./sheets');
 const { buildRosterMap, matchUser } = require('./match');
 const { aggregate, formatUtc, parseSheetTimestamp } = require('./aggregate');
-const { log, logError } = require('./log');
+const { log, logError, writeRunLog } = require('./log');
 
 const TOTALS_HEADER = 'Total Clock-ins';
 const START_ROW = 4;
+
+// Per-run report, persisted as logs/sync-<timestamp>.json by writeRunLog.
+const report = { startedAt: new Date().toISOString() };
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
@@ -18,11 +21,15 @@ async function main() {
   const keyPath = required('GOOGLE_APPLICATION_CREDENTIALS');
   const logChannelId = optional('LOG_CHANNEL_ID');
 
+  report.dryRun = dryRun;
+
   // 1. Scan — complete-scan-or-nothing: any throw here means no writes happen.
   log('sync.start', { dryRun, channelId });
   console.log(`Scanning channel ${channelId}...`);
   const messages = await fetchAllMessages(channelId, token);
   const byUser = aggregate(messages);
+  report.messagesScanned = messages.length;
+  report.distinctUsers = byUser.size;
   log('sync.scan.done', { messages: messages.length, users: byUser.size });
   console.log(`Scanned ${messages.length} messages from ${byUser.size} distinct users.`);
 
@@ -61,20 +68,26 @@ async function main() {
   let kept = 0;
   for (const [row, { lastMs, count }] of [...perRow].sort((a, b) => a[0] - b[0])) {
     const idx = row - START_ROW;
+    const handle = roster.handles[idx];
     const existingMs = parseSheetTimestamp(roster.lastActive[idx]);
     const newer = existingMs === null || lastMs > existingMs;
     if (newer && formatUtc(lastMs) !== (roster.lastActive[idx] || '').trim()) {
-      updates.push({ range: `H${row}`, value: formatUtc(lastMs) });
+      updates.push({ range: `H${row}`, value: formatUtc(lastMs), handle, previous: roster.lastActive[idx] || '' });
       advanced++;
     } else {
       kept++;
     }
     if (String(count) !== (roster.totals[idx] || '').trim()) {
-      updates.push({ range: `I${row}`, value: count });
+      updates.push({ range: `I${row}`, value: count, handle, previous: roster.totals[idx] || '' });
     }
   }
 
   // 4. Write
+  report.rowsMatched = perRow.size;
+  report.lastActiveAdvanced = advanced;
+  report.lastActiveUnchanged = kept;
+  report.updates = updates;
+  report.unmatched = unmatched.map((u) => ({ user: u.user, count: u.count, lastSeen: formatUtc(u.lastMs) }));
   log('sync.updates.computed', {
     updates: updates.length, rowsMatched: perRow.size, advanced, kept, unmatched: unmatched.length,
   });
@@ -83,6 +96,7 @@ async function main() {
     for (const u of updates) console.log(`  ${u.range} = ${u.value}`);
   } else {
     const result = await batchWrite(gToken, sheetId, tab, updates);
+    report.cellsWritten = result.totalUpdatedCells || 0;
     log('sync.write.done', { cells: result.totalUpdatedCells || 0 });
     console.log(`Wrote ${result.totalUpdatedCells || 0} cells.`);
   }
@@ -114,8 +128,20 @@ async function main() {
   log('sync.done', { dryRun });
 }
 
-main().catch((e) => {
-  logError('sync.fail', e);
-  console.error(`SYNC FAILED — no cells were modified beyond any completed batch.\n${e.stack || e.message}`);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    report.error = e.message;
+    report.stack = e.stack;
+    logError('sync.fail', e);
+    console.error(`SYNC FAILED — no cells were modified beyond any completed batch.\n${e.stack || e.message}`);
+    process.exitCode = 1;
+  })
+  .finally(() => {
+    report.finishedAt = new Date().toISOString();
+    try {
+      const file = writeRunLog(report);
+      log('sync.log.written', { file });
+    } catch (e) {
+      logError('sync.log.fail', e);
+    }
+  });

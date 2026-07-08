@@ -6,3 +6,6 @@ state.json
 
 # Node
 node_modules/
+
+# Per-run sync logs (uploaded as workflow artifacts, not committed)
+logs/
