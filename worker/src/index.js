@@ -8,6 +8,7 @@
 import { getAccessToken, readLedgerRows, writeQty } from './gsheets.js';
 import { parseLedger, findItem, rankMatches } from './ledger.js';
 import { quoteForTime } from './quotes.js';
+import { postLeaderboard } from './leaderboard.js';
 import { log, logError } from './log.js';
 
 const HELP_TEXT = [
@@ -226,6 +227,14 @@ async function postBulletin(env, scheduledTime) {
 
 export default {
   async scheduled(event, env, ctx) {
+    if (event.cron === '0 18 * * 1') {
+      ctx.waitUntil(
+        postLeaderboard(env, event.scheduledTime)
+          .then((content) => log('leaderboard.posted', { content: content.slice(0, 120) }))
+          .catch((e) => logError('leaderboard.fail', e)),
+      );
+      return;
+    }
     ctx.waitUntil(postBulletin(env, event.scheduledTime).catch((e) => logError('bulletin.fail', e)));
   },
 

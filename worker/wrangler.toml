@@ -3,9 +3,15 @@ main = "src/index.js"
 # Date kept within wrangler@3's supported range (Node 18 on this machine can't run wrangler@4)
 compatibility_date = "2024-09-23"
 
-# Every 3 hours: post the next embassy bulletin quote to #clock-in (src/quotes.js)
+# Every 3 h: bulletin quote (src/quotes.js). Mondays 18:00 UTC: weekly
+# attendance leaderboard (src/leaderboard.js) — index.js routes by event.cron.
 [triggers]
-crons = ["0 */3 * * *"]
+crons = ["0 */3 * * *", "0 18 * * 1"]
+
+# Weekly clock-in snapshot for "climber of the week" deltas
+[[kv_namespaces]]
+binding = "STATE"
+id = "a49caad771614a1eae647d580f235ea1"
 
 [vars]
 # Armory spreadsheet (native Google Sheet, shared with the service account as Editor)
@@ -16,6 +22,8 @@ SMITHING_TAB = "Smithing"
 ALLOWED_USER_IDS = "269093657305415683"
 # #clock-in channel — the 3-hourly bulletin is posted here
 CLOCKIN_CHANNEL_ID = "1511723933609754797"
+# Clock-in roster spreadsheet (read for the weekly leaderboard)
+CLOCKIN_SHEET_ID = "1KS__WJoqI_o3esXxO3Ei3L6SlJwJnOXQrjEr-FCPEZ0"
 
 # Secrets (set with `npx wrangler secret put <NAME>` from the worker/ directory):
 #   DISCORD_PUBLIC_KEY           - app public key from the Discord Developer Portal

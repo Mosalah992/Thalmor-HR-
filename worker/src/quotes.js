@@ -14,7 +14,6 @@ export const QUOTES = [
   "Falcril has clocked in 42 times. At this point we're not sure he ever leaves.",
   'Jo\'Khazan arrived on time. The rest of you have shamed the Khajiiti people.',
   "Ak'karim challenged the chain of command and still made it to roll call.",
-  'Orion Du Bois went OOC three times this week and still managed to clock in.',
   "The Embassy would like to remind staff that 'I overslept' is not an approved diplomatic response.",
   "Every minute you're late, Lady Celeriel creates another spreadsheet about it.",
   'The Eye of the Dominion sees all. The attendance ledger sees more.',
