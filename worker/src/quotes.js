@@ -45,7 +45,7 @@ export const QUOTES = [
   // ── From the ledger itself ──────────────────────────────────────────────
   'Lord Annatar of the Black Talons holds the record: 45 clock-ins. Not even the Night of Green Fire was executed with such consistency.',
   'Lord Annatar: 45. Lady Yhavna: 43. Falcril: 42. This is a race for the glory of the Dominion, and you are losing it from your bedroll.',
-  'Ariniel has 37 clock-ins. Ambassadors are supposed to be abroad on diplomatic missions. She simply refuses to be. Where are YOU?',
+  'Ariniel has 37 clock-ins. Ambassadors are supposed to be abroad on diplomatic missions. He simply refuses to be. Where are YOU?',
   'Akira Frey, Ambassador, 33 clock-ins. Diplomacy is mostly showing up. So was the Concordat.',
   "Ka'Taravi and Iwelien are tied at 31 clock-ins. The Black Talons do everything in formation, including attendance.",
   'Milinuen and Iireussa Thilinaine are tied at 22 clock-ins each. Sibling rivalry is now an approved motivational technique of the Dominion.',
