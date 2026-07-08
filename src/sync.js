@@ -5,6 +5,7 @@ const { fetchAllMessages, postMessage } = require('./discord');
 const { getAccessToken, getTabTitle, readRoster, batchWrite } = require('./sheets');
 const { buildRosterMap, matchUser } = require('./match');
 const { aggregate, formatUtc, parseSheetTimestamp } = require('./aggregate');
+const { log, logError } = require('./log');
 
 const TOTALS_HEADER = 'Total Clock-ins';
 const START_ROW = 4;
@@ -18,9 +19,11 @@ async function main() {
   const logChannelId = optional('LOG_CHANNEL_ID');
 
   // 1. Scan — complete-scan-or-nothing: any throw here means no writes happen.
+  log('sync.start', { dryRun, channelId });
   console.log(`Scanning channel ${channelId}...`);
   const messages = await fetchAllMessages(channelId, token);
   const byUser = aggregate(messages);
+  log('sync.scan.done', { messages: messages.length, users: byUser.size });
   console.log(`Scanned ${messages.length} messages from ${byUser.size} distinct users.`);
 
   // 2. Read roster
@@ -28,6 +31,7 @@ async function main() {
   const tab = await getTabTitle(gToken, sheetId);
   const roster = await readRoster(gToken, sheetId, tab);
   const { map, duplicates } = buildRosterMap(roster.handles, START_ROW);
+  log('sync.roster.read', { handles: roster.handles.filter(Boolean).length, tab, duplicates: duplicates.length });
   console.log(`Roster: ${roster.handles.filter(Boolean).length} handles on tab "${tab}".`);
   if (duplicates.length) console.warn(`Duplicate roster handles (first row wins): ${duplicates.join(', ')}`);
 
@@ -71,11 +75,15 @@ async function main() {
   }
 
   // 4. Write
+  log('sync.updates.computed', {
+    updates: updates.length, rowsMatched: perRow.size, advanced, kept, unmatched: unmatched.length,
+  });
   if (dryRun) {
     console.log(`\n[dry-run] ${updates.length} cell updates that WOULD be written:`);
     for (const u of updates) console.log(`  ${u.range} = ${u.value}`);
   } else {
     const result = await batchWrite(gToken, sheetId, tab, updates);
+    log('sync.write.done', { cells: result.totalUpdatedCells || 0 });
     console.log(`Wrote ${result.totalUpdatedCells || 0} cells.`);
   }
 
@@ -97,13 +105,17 @@ async function main() {
   if (logChannelId && !dryRun) {
     try {
       await postMessage(logChannelId, token, summary);
+      log('sync.summary.posted', { channel: logChannelId });
     } catch (e) {
+      logError('sync.summary.fail', e, { channel: logChannelId });
       console.warn(`Could not post summary to log channel: ${e.message}`);
     }
   }
+  log('sync.done', { dryRun });
 }
 
 main().catch((e) => {
+  logError('sync.fail', e);
   console.error(`SYNC FAILED — no cells were modified beyond any completed batch.\n${e.stack || e.message}`);
   process.exit(1);
 });

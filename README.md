@@ -47,6 +47,28 @@ Required repository **Actions secrets**:
 - The bot needs **View Channel** + **Read Message History** on `#clock-in` (channel-level
   permission if the channel is private).
 
+## Smithing commands (quartermaster)
+
+Slash commands for the **Smithing** tab of the
+[Armory sheet](https://docs.google.com/spreadsheets/d/1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg/edit),
+served by a Cloudflare Worker ([worker/](worker/)) — no always-on process, no channel setup:
+
+- `/add qty item` — add smithed items (e.g. `/add 1 item:Thalmor Boots`)
+- `/remove qty item` — remove items, floored at 0
+- `/set qty item` — correct a count to an exact number (0 allowed)
+- `/stock [item]` — one item's count + storage location, or a per-section summary
+
+The `item` field autocompletes from the live sheet; unknown names get "did you mean"
+suggestions and never write. Only Qty cells (column B) of recognized item rows are ever
+written. Usable only by the Discord IDs in `ALLOWED_USER_IDS` (enforced in the Worker).
+
+**Deploy** (from `worker/`): `npx wrangler@3 deploy` (wrangler 3 — this machine's Node 18
+can't run wrangler 4), secrets `DISCORD_PUBLIC_KEY` and `GOOGLE_SERVICE_ACCOUNT_JSON` via
+`wrangler secret put`; vars live in [worker/wrangler.toml](worker/wrangler.toml). The
+app's Interactions Endpoint URL points at the Worker
+(`https://thalmor-quartermaster.salaz4r.workers.dev`). Re-register commands after changing
+their definitions: `node scripts/register-commands.js`.
+
 ## Design docs
 
 Planning lives in [openspec/changes/add-clockin-bot/](openspec/changes/add-clockin-bot/):

@@ -1,0 +1,5 @@
+{
+  "name": "thalmor-quartermaster-worker",
+  "private": true,
+  "type": "module"
+}
