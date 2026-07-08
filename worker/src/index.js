@@ -7,6 +7,7 @@
 
 import { getAccessToken, readLedgerRows, writeQty } from './gsheets.js';
 import { parseLedger, findItem, rankMatches } from './ledger.js';
+import { quoteForTime } from './quotes.js';
 import { log, logError } from './log.js';
 
 const HELP_TEXT = [
@@ -208,7 +209,26 @@ function handleCommand(interaction, env, ctx) {
   return json({ type: 5 }); // deferred — Discord shows "thinking…" and we edit in
 }
 
+/** Cron (every 3 h): post the next embassy bulletin quote to #clock-in. */
+async function postBulletin(env, scheduledTime) {
+  const content = `☀️📋 ${quoteForTime(scheduledTime)}`;
+  const res = await fetch(`https://discord.com/api/v10/channels/${env.CLOCKIN_CHANNEL_ID}/messages`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error(`Discord post ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  log('bulletin.posted', { quote: content.slice(0, 120) });
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(postBulletin(env, event.scheduledTime).catch((e) => logError('bulletin.fail', e)));
+  },
+
   async fetch(request, env, ctx) {
     if (request.method !== 'POST') {
       return new Response('Thalmor Quartermaster interactions endpoint', { status: 200 });
