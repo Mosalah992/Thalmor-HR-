@@ -53,7 +53,6 @@ export const QUOTES = [
   'Aethelm of the Eagle Guard clocked in while the eagles still slept and Magnus was barely a rumor on the horizon.',
   'Rivi has exactly one clock-in. It was flawless. The Embassy wishes to clarify that quality over quantity is NOT Dominion attendance policy.',
   'Lady Valynwe has eight clock-ins and one recorded compliment from the bot. The bot is not wrong. The bot is also counting.',
-  "Eidolon Juno infiltrated the Ninth Vanguard and unmasked heretics. You can't even infiltrate the muster line before nine.",
   'Zerk. One name. One syllable. Zero recorded clock-ins. Brevity is a virtue of the sword, not of the ledger.',
   'Baron Telandor advises Command. Command advises you to clock in. The Dominion does not repeat its advice.',
   'The Embassy reminds new arrivals that "Just Joined" is a status, not a lifestyle. The Dominion measures loyalty in appearances.',
