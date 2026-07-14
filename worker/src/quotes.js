@@ -1,47 +1,35 @@
 // Embassy bulletin quotes — posted to #clock-in every 3 hours by the cron
-// trigger. Rotates deterministically: each 3-hour slot since epoch maps to the
-// next quote, so the full list cycles (~7 days) with no repeats in between.
+// trigger. Randomized rotation: each full pass through the list is shuffled
+// with a seed derived from the cycle number, so the order looks random but
+// every quote appears exactly once per cycle (no back-to-back repeats).
 
 export const QUOTES = [
-  // ── Dispatch board ──────────────────────────────────────────────────────
-  "The Dominion waits for no one. Especially not Gi'Zaro from Staff.",
-  'If Lady Celeriel can keep the Embassy afloat through manifests, ledgers, and an incurable fear of missing out, you can make it to muster on time.',
-  'Lord Malen died fighting a Dremora and still managed to clock in, what is your excuse?',
-  "Lord Verux arrived before the meeting. The meeting hadn't been scheduled yet. The Justiciars are studying how.",
-  'Ancarion has already reorganized the armory, counted the moonstone, and filed the requisition with Alinor. Where are you?',
-  "Sir Havi is busy Havimaxxing. The Eight preserve him. What's your excuse?",
-  'Lady Yhavna clocks-in every day and still has time to maintain a healthy relationship with a human.',
-  "Jo'Khazan arrived on time. The rest of you have shamed the Khajiiti people, and Jone and Jode besides.",
-  "The Embassy reminds staff that 'I overslept' is not an approved diplomatic response. Neither was it at the White-Gold Tower.",
-  "Every minute you're late, Lady Celeriel adds another page to your dossier.",
-  'The Eye of the Dominion sees all. The attendance ledger sees more.',
-  'Clock in on time or be assigned to inventory moonstone with Ancarion for eight hours. He has opinions about moonstone.',
-  'The Black Talons strike swiftly and without warning. The Office of Records strikes with parchment.',
-  'Remember: the chain of command begins with showing up.',
-  'The White-Gold Concordat took less negotiation than getting some recruits to attend training.',
-  "Talos worship is banned. So is the phrase 'I forgot to clock in.'",
-  'The Great War lasted five years. Some of you have not clocked in for five weeks. The comparison has been noted.',
-  "Everyone has a dossier. Attendance determines whether yours reads 'asset' or 'liability.'",
-  "Your dossier currently reads: 'Status — Uncooperative.' Clocking in is the first step of rehabilitation.",
-  'A Dragon Break once lasted one thousand and eight years. Your shift lasts three hours. Clock in.',
-  'The Psijic Order withdrew from the world for centuries — and still filed proper notice. Be like the Psijics.',
-  'The Crystal Tower stood for millennia. Your excuse will not survive the morning briefing.',
-  'Moon sugar is contraband. Punctuality is mandatory. Do not confuse the two lists again.',
-  'Elsweyr runs on moon sugar. The Embassy runs on attendance. Both are habit-forming.',
-  'Eight Divines. Not nine. And exactly one attendance ledger.',
-  'Somewhere in Skyrim, a Justiciar is marching a prisoner through a blizzard. You cannot march yourself to muster.',
-  'The Dominion brought the Empire to its knees at the White-Gold Tower. You can bring yourself to the clock-in channel.',
+  // ─── Rivi, Embassy Physician ───
+  'Senior Staff Rivi has healed forty-two agents this month through the medical application of purring. The Dominion does not question results. Neither should you.',
+  "Rivi's clinic reports a 100% recovery rate. Agents who did not recover were reclassified before the report was filed.",
+  "Wounded agents will report to Rivi. Agents faking wounds to receive purr therapy will be assigned to Justiciar Ganaril's Fireball lecture as live demonstration material.",
+  'The Embassy physician is a Khajiit. The Embassy is aware of the irony. The Embassy has decided the irony is classified.',
+  "Rivi reminds all agents that 'I'll walk it off' is not a treatment plan recognized by the Dominion. Report to the clinic. She can hear your ribs from here.",
 
-  // ── Break room posters ──────────────────────────────────────────────────
-  '"Lord Verux is not angry. He has simply added your name to a list. The list is in Alinor now."',
-  '"Congratulations on arriving only five minutes late. The inquisition has been downgraded to a conversation."',
-  '"If Gi\'Zaro can find the Embassy, so can you."',
-  '"Attendance is mandatory. Enthusiasm remains optional."',
-  '"Clock in. Clock out. Overthrow human dominance. In that order."',
-  '"The Thalmor do not make mistakes. The ledger says you were late. Reflect on what this means."',
-  '"Auri-El ascended to Aetherius. You are only asked to ascend the Embassy steps by nine."',
+  // ─── Orion & The Goon Squad ───
+  "Orion and his associates were observed 'conducting field exercises' near the stables. The stables disagree. An inquiry has been opened, and closed, and reopened.",
+  "The Embassy does not have a 'goon squad.' The Embassy has an Irregular Tactical Element that answers to Orion and, allegedly, to reason.",
+  "Whatever Orion's squad did last Loredas is now a training scenario. Congratulations. This is not a compliment.",
+  "Orion's men have been reminded that 'morale operations' require prior written approval. Laughter heard from the barracks is being audited.",
 
-  // ── From the ledger itself ──────────────────────────────────────────────
+  // ─── The Nuramor Situation ───
+  'The Embassy now employs six agents of House Nuramor. Command is no longer certain this was a recruitment drive and not an annexation.',
+  "If you shout 'Nuramor!' in the courtyard, statistically, someone will answer. This has been weaponized. Details are classified.",
+  'New arrivals are advised: you do not need to be a Nuramor to serve the Dominion. It simply appears to help.',
+  'The ledger clerk has requested a separate page for House Nuramor. The request was denied. The clerk has requested a transfer. That was also denied.',
+
+  // ─── General Ledger Menace ───
+  'Have you praised the Aldmeri Dominion on main today?',
+  'Agents who clock in but never clock out exist in a state the Treasury refuses to define and refuses to pay.',
+  'The attendance ledger does not forget. The attendance ledger does not forgive. The attendance ledger has been enchanted, and it is watching.',
+  "Reminder: 'I was active, I just didn't clock in' is a confession, not an excuse.",
+
+  // ─── Personnel dispatches ───
   'Lord Lakkon misses his husband very much. But no one will miss you if you never show up.',
   'All agents with less than 8h of service this week are invited to a private lecture with Justiciar Ganaril. The topic will be the effects of Fireball on the body.',
   'Lord Elvander and Lady Celeriel have been carrying the Thalmor Embassy on their backs for the last weeks. Find a special someone who motivates you to clock in every day just like them.',
@@ -55,5 +43,35 @@ export const QUOTES = [
 
 const SLOT_MS = 3 * 60 * 60 * 1000; // one quote per 3-hour cron slot
 
-/** Deterministic pick: consecutive 3-hour slots walk the list in order. */
-export const quoteForTime = (ms) => QUOTES[Math.floor(ms / SLOT_MS) % QUOTES.length];
+/** mulberry32 — tiny deterministic PRNG, good enough for shuffling quotes. */
+function prng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Fisher–Yates shuffle of [0..n) seeded by the cycle number. */
+function shuffledOrder(n, seed) {
+  const rand = prng(seed);
+  const order = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+}
+
+/**
+ * Deterministic randomized pick: consecutive 3-hour slots walk a per-cycle
+ * shuffle of the list, reshuffled every full pass.
+ */
+export function quoteForTime(ms) {
+  const slot = Math.floor(ms / SLOT_MS);
+  const cycle = Math.floor(slot / QUOTES.length);
+  return QUOTES[shuffledOrder(QUOTES.length, cycle)[slot % QUOTES.length]];
+}
