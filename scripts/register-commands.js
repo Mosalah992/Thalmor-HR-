@@ -35,7 +35,7 @@ const commands = [
   // ALLOWED_USER_IDS check is the real gate; others get an ephemeral refusal.
   {
     name: 'help',
-    description: 'List the duty and quartermaster commands',
+    description: 'Thalmor HR — full command list (clock-in, hours, smithing ledger)',
   },
   {
     name: 'clockin',

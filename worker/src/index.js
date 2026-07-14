@@ -16,20 +16,27 @@ import { runWeeklyCloseout } from './weekly.js';
 import { log, logError } from './log.js';
 
 const HELP_TEXT = [
-  '**Thalmor Quartermaster** — duty & armory commands:',
+  '☀️ **THALMOR HR — COMMAND LIST** ☀️',
   '',
-  '__Duty hours (everyone on the roster):__',
-  '`/clockin [time]` — start your shift; optional hammertime tag (`<t:…>`) to backdate',
-  '`/clockout [time]` — end your shift; hours count toward the weekly 8h pay goal',
-  'Hours reset every Sunday 18:00 UTC after the attendance honors post.',
+  '**Duty hours** — anyone on the roster (Discord column):',
+  '`/clockin [time]` — start your shift. `time` is optional: a hammertime tag (`<t:1752480000:t>`, see <https://hammertime.cyou>) or unix seconds to backdate; defaults to right now.',
+  '`/clockout [time]` — end your shift and log the hours to the roster sheet.',
+  '`/help` — this list.',
   '',
-  '__Smithing ledger (quartermaster only):__',
+  '**The weekly cycle:**',
+  '• Hours accumulate in the roster; reach **8h** in a week and you are marked **Owed** for pay.',
+  '• Sundays **18:00 UTC**: attendance honors are posted, then hours and pay markers reset.',
+  '• Forgot to clock out? Your shift stays open — `/clockout` with a backdated `time` closes it. Shifts still open at the Sunday reset are discarded.',
+  '• Limits: shifts up to 24h, backdating up to 7 days, no future times.',
+  '',
+  '**Smithing ledger** — quartermaster only:',
   '`/add qty item` — add smithed items (e.g. `/add 1 Thalmor Boots`)',
   '`/remove qty item` — remove issued/lost items, floors at 0',
   '`/set qty item` — correct a count to an exact number (0 allowed)',
   '`/stock [item]` — one item’s count + location, or the whole ledger summary',
-  '',
   'The *item* field autocompletes from the live [Armory sheet](<https://docs.google.com/spreadsheets/d/1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg/edit>).',
+  '',
+  '_The Dominion records deeds, not intentions._',
 ].join('\n');
 
 const json = (obj, status = 200) =>
