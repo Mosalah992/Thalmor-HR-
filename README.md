@@ -1,57 +1,44 @@
 # Thalmor Clock-In
 
-Daily sync of clock-in activity from the Thalmor Discord **#clock-in** channel to the
+Weekly duty-hours tracking for the Thalmor Discord, synced to the
 [Corps roster Google Sheet](https://docs.google.com/spreadsheets/d/1KS__WJoqI_o3esXxO3Ei3L6SlJwJnOXQrjEr-FCPEZ0/edit).
+Everything runs on one Cloudflare Worker ([worker/](worker/)) — no always-on process.
+(The old daily message-scan sync is retired; hours come from slash commands now.)
 
-Each run scans the channel's full message history and, for every roster member matched by the
-**Discord** column (E):
+## Duty hours (`/clockin`, `/clockout`)
 
-- **Last Active** (column H): time of their newest message, `YYYY-MM-DD HH:mm` **UTC** —
-  only ever advanced, never regressed.
-- **Total Clock-ins** (column I): lifetime message count in the channel.
+Any member whose Discord username matches roster column **E** can use:
 
-Users who clocked in but match no roster row are listed in the run summary so officers can fix
-handles in column E. Headers, the stats block (columns J+), and every other column are never
-touched. Zero npm dependencies — plain Node 18+.
+- `/clockin [time]` — start a shift. Optional `time` backdates it: a hammertime tag
+  (`<t:1752480000:t>`) or plain unix seconds; defaults to right now.
+- `/clockout [time]` — end the shift and log the hours.
 
-## Run it
+On the roster sheet (row 3 headers, data from row 4):
 
-```bash
-node src/sync.js --dry-run   # show what would be written, change nothing
-node src/sync.js             # real sync
-npm test                     # unit tests
-```
-
-Config comes from `.env` (see [.env.example](.env.example)) plus the service-account key at
-`credentials/thalmor-service-account.json`. Both are git-ignored.
-
-## Scheduling
-
-[.github/workflows/daily-sync.yml](.github/workflows/daily-sync.yml) runs the sync **daily at
-04:00 UTC** and on demand (Actions tab → *Daily clock-in sync* → *Run workflow*, with an optional
-dry-run checkbox).
-
-Required repository **Actions secrets**:
-
-| Secret | Value |
+| Column | Written by the bot |
 |---|---|
-| `DISCORD_TOKEN` | Bot token |
-| `CLOCKIN_CHANNEL_ID` | `#clock-in` channel ID |
-| `LOG_CHANNEL_ID` | (optional) channel for the daily summary post |
-| `SHEET_ID` | `1KS__WJoqI_o3esXxO3Ei3L6SlJwJnOXQrjEr-FCPEZ0` |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | Full contents of the service-account JSON key |
+| **G Owed** ☑ | auto-ticked when weekly hours reach **8h** (manual ticks respected) |
+| **H Paid** ☑ | never — managed by hand, unchecked at the weekly reset |
+| **J Last Active** | stamped on every clock-in/out, `YYYY-MM-DD HH:mm` UTC, only advances |
+| **K Total Hours** | weekly hours, green at ≥ 8h, reset every Sunday |
 
-## Access requirements
+The **Ledger** tab computes pay itself: `# Actives` cells are `COUNTIFS` over the Owed
+checkboxes per rank tier, `Total = Payment × # Actives`. The bot only fills each tier's
+**Names** cell (short names, e.g. `Malen` for "Lord Malen Velrith ✦✦✦✧✧✧").
 
-- The sheet is shared with `ancarion@thalmor.iam.gserviceaccount.com` as **Editor**.
-- The bot needs **View Channel** + **Read Message History** on `#clock-in` (channel-level
-  permission if the channel is private).
+**Weekly close-out — Sundays 18:00 UTC** (Worker cron): posts the hours leaderboard
+(top 5 + climber of the week + who reached 8h) to `#clock-in`, then resets the week:
+Total Hours → 0, Owed/Paid unchecked, Ledger Names cleared. Shifts still open are
+discarded and named in the post.
+
+Forgot to clock out? The shift stays open until you `/clockout` — use a backdated
+`time` to close it honestly. Shifts can't exceed 24h and can't be backdated more
+than 7 days.
 
 ## Smithing commands (quartermaster)
 
 Slash commands for the **Smithing** tab of the
-[Armory sheet](https://docs.google.com/spreadsheets/d/1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg/edit),
-served by a Cloudflare Worker ([worker/](worker/)) — no always-on process, no channel setup:
+[Armory sheet](https://docs.google.com/spreadsheets/d/1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg/edit):
 
 - `/add qty item` — add smithed items (e.g. `/add 1 item:Thalmor Boots`)
 - `/remove qty item` — remove items, floored at 0
@@ -59,17 +46,30 @@ served by a Cloudflare Worker ([worker/](worker/)) — no always-on process, no 
 - `/stock [item]` — one item's count + storage location, or a per-section summary
 
 The `item` field autocompletes from the live sheet; unknown names get "did you mean"
-suggestions and never write. Only Qty cells (column B) of recognized item rows are ever
-written. Usable only by the Discord IDs in `ALLOWED_USER_IDS` (enforced in the Worker).
+suggestions and never write. Usable only by the Discord IDs in `ALLOWED_USER_IDS`.
 
-**Deploy** (from `worker/`): `npx wrangler@3 deploy` (wrangler 3 — this machine's Node 18
-can't run wrangler 4), secrets `DISCORD_PUBLIC_KEY` and `GOOGLE_SERVICE_ACCOUNT_JSON` via
-`wrangler secret put`; vars live in [worker/wrangler.toml](worker/wrangler.toml). The
-app's Interactions Endpoint URL points at the Worker
-(`https://thalmor-quartermaster.salaz4r.workers.dev`). Re-register commands after changing
-their definitions: `node scripts/register-commands.js`.
+## Operations
+
+```bash
+npm test                       # unit tests (pure functions, no network)
+node scripts/setup-sheet.js    # one-time sheet migration (idempotent, --dry-run supported)
+node scripts/register-commands.js   # (re-)register the slash commands
+cd worker && npx wrangler@3 deploy  # deploy (wrangler 3 — Node 18 can't run wrangler 4)
+```
+
+Worker secrets (`npx wrangler@3 secret put …` from `worker/`): `DISCORD_PUBLIC_KEY`,
+`GOOGLE_SERVICE_ACCOUNT_JSON`, `DISCORD_BOT_TOKEN`. Vars and the two cron triggers
+(3-hourly bulletin, Sunday close-out) live in [worker/wrangler.toml](worker/wrangler.toml).
+The app's Interactions Endpoint URL points at the Worker
+(`https://thalmor-quartermaster.salaz4r.workers.dev`).
+
+Local scripts read `.env` (see [.env.example](.env.example)) and the service-account key
+at `credentials/thalmor-service-account.json` (git-ignored). The roster sheet is shared
+with `ancarion@thalmor.iam.gserviceaccount.com` as **Editor**.
 
 ## Design docs
 
-Planning lives in [openspec/changes/add-clockin-bot/](openspec/changes/add-clockin-bot/):
-proposal, design (architecture + decisions), specs (testable requirements), tasks.
+Original planning for the retired daily sync lives in
+[openspec/changes/add-clockin-bot/](openspec/changes/add-clockin-bot/); the roster
+column layout described there predates the Owed/Paid columns (E Discord is unchanged,
+Last Active is now J, and Total Clock-ins became K Total Hours).

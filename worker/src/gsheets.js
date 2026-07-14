@@ -72,6 +72,21 @@ export async function readLedgerRows(env, token) {
   return data.values || [];
 }
 
+/** Values of an A1 range (with tab prefix) of any spreadsheet. */
+export async function readValues(token, sheetId, range) {
+  const data = await api(token, sheetId, 'GET', `/values/${encodeURIComponent(range)}`);
+  return data.values || [];
+}
+
+/**
+ * Batched cell writes to any spreadsheet.
+ * @param {{range: string, values: any[][]}[]} data  ranges WITH tab prefix
+ */
+export async function batchWriteValues(token, sheetId, data, valueInputOption = 'RAW') {
+  if (data.length === 0) return { totalUpdatedCells: 0 };
+  return api(token, sheetId, 'POST', '/values:batchUpdate', { valueInputOption, data });
+}
+
 /** Write a single Qty cell (column B of the given 1-based row). */
 export async function writeQty(env, token, row, qty) {
   const range = encodeURIComponent(`'${env.SMITHING_TAB}'!B${row}`);

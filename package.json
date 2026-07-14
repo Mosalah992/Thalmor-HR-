@@ -1,12 +1,11 @@
 {
   "name": "thalmor-clockin",
-  "version": "1.0.0",
-  "description": "Daily sync of Thalmor Discord clock-ins to the roster Google Sheet",
-  "main": "src/sync.js",
+  "version": "2.0.0",
+  "description": "Thalmor Discord duty-hours tracking (/clockin, /clockout) synced to the roster Google Sheet via a Cloudflare Worker",
   "scripts": {
-    "sync": "node src/sync.js",
-    "dry-run": "node src/sync.js --dry-run",
-    "test": "node --test tests/"
+    "test": "node --test tests/",
+    "register": "node scripts/register-commands.js",
+    "setup-sheet": "node scripts/setup-sheet.js"
   },
   "engines": {
     "node": ">=18"

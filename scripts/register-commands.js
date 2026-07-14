@@ -22,13 +22,30 @@ const qtyOption = {
   min_value: 1,
 };
 
+const timeOption = {
+  type: 3,
+  name: 'time',
+  description: 'Hammertime tag (<t:…>) or unix seconds to backdate — defaults to right now',
+  required: false,
+};
+
 const commands = [
   // No default_member_permissions: '0' would hide the commands from everyone
   // but server admins — and the quartermaster is not an admin. The Worker's
   // ALLOWED_USER_IDS check is the real gate; others get an ephemeral refusal.
   {
     name: 'help',
-    description: 'List the quartermaster smithing commands',
+    description: 'List the duty and quartermaster commands',
+  },
+  {
+    name: 'clockin',
+    description: 'Clock in for duty (weekly hours count toward the 8h pay goal)',
+    options: [timeOption],
+  },
+  {
+    name: 'clockout',
+    description: 'Clock out — logs the shift hours to the roster sheet',
+    options: [timeOption],
   },
   {
     name: 'add',

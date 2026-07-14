@@ -1,18 +1,29 @@
 // Thalmor Quartermaster — Discord Interactions endpoint (Cloudflare Worker).
 // /add, /remove, /stock adjust and report Qty cells in the Smithing tab of
-// the Armory Google Sheet. Quartermaster-only (ALLOWED_USER_IDS).
+// the Armory Google Sheet (quartermaster-only, ALLOWED_USER_IDS).
+// /clockin & /clockout track weekly duty hours on the clock-in roster sheet
+// (any roster member). Sundays 18:00 UTC: hours leaderboard + weekly reset.
 //
-// Secrets: DISCORD_PUBLIC_KEY, GOOGLE_SERVICE_ACCOUNT_JSON
-// Vars:    SHEET_ID, SMITHING_TAB, ALLOWED_USER_IDS (comma-separated)
+// Secrets: DISCORD_PUBLIC_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, DISCORD_BOT_TOKEN
+// Vars:    SHEET_ID, SMITHING_TAB, ALLOWED_USER_IDS, CLOCKIN_CHANNEL_ID,
+//          CLOCKIN_SHEET_ID
 
 import { getAccessToken, readLedgerRows, writeQty } from './gsheets.js';
 import { parseLedger, findItem, rankMatches } from './ledger.js';
 import { quoteForTime } from './quotes.js';
-import { postLeaderboard } from './leaderboard.js';
+import { runClockIn, runClockOut } from './clock.js';
+import { runWeeklyCloseout } from './weekly.js';
 import { log, logError } from './log.js';
 
 const HELP_TEXT = [
-  '**Thalmor Quartermaster** — smithing ledger commands (quartermaster only):',
+  '**Thalmor Quartermaster** — duty & armory commands:',
+  '',
+  '__Duty hours (everyone on the roster):__',
+  '`/clockin [time]` — start your shift; optional hammertime tag (`<t:…>`) to backdate',
+  '`/clockout [time]` — end your shift; hours count toward the weekly 8h pay goal',
+  'Hours reset every Sunday 18:00 UTC after the attendance honors post.',
+  '',
+  '__Smithing ledger (quartermaster only):__',
   '`/add qty item` — add smithed items (e.g. `/add 1 Thalmor Boots`)',
   '`/remove qty item` — remove issued/lost items, floors at 0',
   '`/set qty item` — correct a count to an exact number (0 allowed)',
@@ -175,9 +186,39 @@ async function editReply(interaction, content) {
   if (!res.ok) throw new Error(`Discord edit ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
 
+const invokerUsername = (interaction) =>
+  (interaction.member && interaction.member.user && interaction.member.user.username) ||
+  (interaction.user && interaction.user.username) || '';
+
 function handleCommand(interaction, env, ctx) {
   const name = interaction.data.name;
   if (name === 'help') return json({ type: 4, data: { content: HELP_TEXT, flags: 64 } });
+
+  // Clock commands are open to everyone; the roster match is the gate.
+  if (name === 'clockin' || name === 'clockout') {
+    const t0 = Date.now();
+    const userId = invokerId(interaction);
+    const username = invokerUsername(interaction);
+    const work = (async () => {
+      let content;
+      try {
+        content = name === 'clockin'
+          ? await runClockIn(env, interaction, userId, username)
+          : await runClockOut(env, interaction, userId, username);
+        log('command.ok', { command: name, user: username, ms: Date.now() - t0, reply: content.slice(0, 120) });
+      } catch (e) {
+        logError('command.fail', e, { command: name, user: username, ms: Date.now() - t0 });
+        content = `❌ ${e.message}`;
+      }
+      try {
+        await editReply(interaction, content);
+      } catch (e) {
+        logError('reply.fail', e, { command: name, ms: Date.now() - t0 });
+      }
+    })();
+    ctx.waitUntil(work);
+    return json({ type: 5 }); // public deferred — the reply is the channel's duty log
+  }
 
   if (!isAllowed(env, interaction)) {
     log('command.refused', { command: name, user: invokerId(interaction) });
@@ -227,11 +268,11 @@ async function postBulletin(env, scheduledTime) {
 
 export default {
   async scheduled(event, env, ctx) {
-    if (event.cron === '0 18 * * 1') {
+    if (event.cron === '0 18 * * SUN') {
       ctx.waitUntil(
-        postLeaderboard(env, event.scheduledTime)
-          .then((content) => log('leaderboard.posted', { content: content.slice(0, 120) }))
-          .catch((e) => logError('leaderboard.fail', e)),
+        runWeeklyCloseout(env, event.scheduledTime)
+          .then((content) => log('weekly.posted', { content: content.slice(0, 120) }))
+          .catch((e) => logError('weekly.fail', e)),
       );
       return;
     }

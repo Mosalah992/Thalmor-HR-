@@ -3,12 +3,13 @@ main = "src/index.js"
 # Date kept within wrangler@3's supported range (Node 18 on this machine can't run wrangler@4)
 compatibility_date = "2024-09-23"
 
-# Every 3 h: bulletin quote (src/quotes.js). Mondays 18:00 UTC: weekly
-# attendance leaderboard (src/leaderboard.js) — index.js routes by event.cron.
+# Every 3 h: bulletin quote (src/quotes.js). Sundays 18:00 UTC: weekly hours
+# leaderboard + week reset (src/weekly.js) — index.js routes by event.cron.
 [triggers]
-crons = ["0 */3 * * *", "0 18 * * 1"]
+crons = ["0 */3 * * *", "0 18 * * SUN"]
 
-# Weekly clock-in snapshot for "climber of the week" deltas
+# Open clock-in shifts (shift:<userId>) + weekly hours snapshot for
+# "climber of the week" deltas
 [[kv_namespaces]]
 binding = "STATE"
 id = "a49caad771614a1eae647d580f235ea1"
