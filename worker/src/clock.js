@@ -1,15 +1,12 @@
 // /clockin and /clockout — weekly duty-hours tracking.
 // Open shifts live in KV (`shift:<discordUserId>`), hours accumulate in
 // roster column K, Last Active (J) is stamped on both commands, and Owed (G)
-// is auto-ticked when a member crosses WEEKLY_GOAL_HOURS; the Ledger tab's
-// Names cells are rewritten from the ticked boxes. The sheet's own COUNTIFS
-// formulas compute # Actives and Totals from column G.
+// is auto-ticked when a member crosses WEEKLY_GOAL_HOURS. The sheet's own
+// COUNTIFS formulas compute # Actives and Totals from column G.
+// The Ledger tab is maintained by hand — the bot never writes to it.
 
 import { getAccessToken, batchWriteValues } from './gsheets.js';
-import {
-  readRoster, matchMember, ledgerNamesByTier,
-  COL, LEDGER_TAB, LEDGER_NAMES_COL,
-} from './roster.js';
+import { readRoster, matchMember, COL } from './roster.js';
 import { log } from './log.js';
 
 export const WEEKLY_GOAL_HOURS = 8;
@@ -125,11 +122,6 @@ export async function runClockOut(env, interaction, userId, username) {
   if (crossedGoal) updates.push({ range: `'${tab}'!${COL.OWED}${member.row}`, values: [[true]] });
   await batchWriteValues(token, env.CLOCKIN_SHEET_ID, updates);
 
-  if (crossedGoal) {
-    member.owed = true; // reflect the tick before regenerating the Ledger names
-    await writeLedgerNames(env, token, members);
-  }
-
   await env.STATE.delete(shiftKey(userId));
   log('clockout.ok', { user: username, row: member.row, shiftHours: roundHours(hours), weekTotal: newTotal, crossedGoal });
 
@@ -146,17 +138,6 @@ function lastActiveUpdate(tab, member, ms) {
   const existing = parseSheetTimestamp(member.lastActive);
   if (existing !== null && existing >= ms) return [];
   return [{ range: `'${tab}'!${COL.LAST_ACTIVE}${member.row}`, values: [[formatUtc(ms)]] }];
-}
-
-/** Rewrite every Ledger tier's Names cell from the Owed checkboxes. */
-export async function writeLedgerNames(env, token, members) {
-  const byRow = ledgerNamesByTier(members);
-  const data = Object.entries(byRow).map(([row, names]) => ({
-    range: `'${LEDGER_TAB}'!${LEDGER_NAMES_COL}${row}`,
-    values: [[names]],
-  }));
-  await batchWriteValues(token, env.CLOCKIN_SHEET_ID, data);
-  log('ledger.names.written', { tiers: data.length });
 }
 
 /** List all open shifts: [{ userId, username, startMs }]. */

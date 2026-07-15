@@ -23,13 +23,13 @@ On the roster sheet (row 3 headers, data from row 4):
 | **K Total Hours** | weekly hours, green at ≥ 8h, reset every Sunday |
 
 The **Ledger** tab computes pay itself: `# Actives` cells are `COUNTIFS` over the Owed
-checkboxes per rank tier, `Total = Payment × # Actives`. The bot only fills each tier's
-**Names** cell (short names, e.g. `Malen` for "Lord Malen Velrith ✦✦✦✧✧✧").
+checkboxes per rank tier, `Total = Payment × # Actives`. The Ledger tab (including the
+**Names** cells) is adjusted by hand — the bot never writes to it.
 
 **Weekly close-out — Sundays 18:00 UTC** (Worker cron): posts the hours leaderboard
 (top 5 + climber of the week + who reached 8h) to `#clock-in`, then resets the week:
-Total Hours → 0, Owed/Paid unchecked, Ledger Names cleared. Shifts still open are
-discarded and named in the post.
+Total Hours → 0, Owed/Paid unchecked. Shifts still open are discarded and named in
+the post.
 
 Forgot to clock out? The shift stays open until you `/clockout` — use a backdated
 `time` to close it honestly. Shifts can't exceed 24h and can't be backdated more

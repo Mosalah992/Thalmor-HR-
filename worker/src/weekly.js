@@ -1,11 +1,11 @@
 // Sunday 18:00 UTC weekly close-out (replaces the old Monday clock-ins
 // leaderboard): post the hours leaderboard to #clock-in, snapshot hours in KV
 // for next week's "climber" delta, then reset the week — Total Hours (K) to 0,
-// Owed (G) and Paid (H) unchecked, Ledger Names cells cleared, and any
-// still-open shifts discarded (named in the post).
+// Owed (G) and Paid (H) unchecked, and any still-open shifts discarded
+// (named in the post). The Ledger tab is maintained by hand — never written.
 
 import { getAccessToken, batchWriteValues } from './gsheets.js';
-import { readRoster, COL, TIERS, LEDGER_TAB, LEDGER_NAMES_COL } from './roster.js';
+import { readRoster, COL } from './roster.js';
 import { fmtHours, listOpenShifts, deleteOpenShifts, WEEKLY_GOAL_HOURS } from './clock.js';
 import { log } from './log.js';
 
@@ -62,16 +62,13 @@ export function buildLeaderboard(members, prev, now, openShifts = []) {
   return lines.join('\n');
 }
 
-/** Reset writes: hours 0, Owed/Paid unchecked for every member row; Ledger names cleared. */
+/** Reset writes: hours 0, Owed/Paid unchecked for every member row. */
 export function resetWrites(tab, members) {
   const data = [];
   for (const m of members) {
     data.push({ range: `'${tab}'!${COL.HOURS}${m.row}`, values: [[0]] });
     data.push({ range: `'${tab}'!${COL.OWED}${m.row}`, values: [[false]] });
     data.push({ range: `'${tab}'!${COL.PAID}${m.row}`, values: [[false]] });
-  }
-  for (const t of TIERS) {
-    data.push({ range: `'${LEDGER_TAB}'!${LEDGER_NAMES_COL}${t.row}`, values: [['']] });
   }
   return data;
 }

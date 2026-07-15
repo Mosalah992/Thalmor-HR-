@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildLeaderboard, resetWrites } from '../worker/src/weekly.js';
-import { TIERS } from '../worker/src/roster.js';
 
 const NOW = Date.UTC(2026, 6, 19, 18, 0); // a Sunday 18:00 UTC
 
@@ -40,13 +39,12 @@ test('buildLeaderboard: empty week still posts', () => {
   assert.match(out, /No hours were logged this week/);
 });
 
-test('resetWrites: zeroes hours, unchecks Owed+Paid, clears every Ledger names cell', () => {
+test('resetWrites: zeroes hours, unchecks Owed+Paid, never touches the Ledger tab', () => {
   const members = [member('Aeth', 9, true, 4), member('Bril', 2, false, 7)];
   const writes = resetWrites('Roster', members);
-  assert.equal(writes.length, members.length * 3 + TIERS.length);
+  assert.equal(writes.length, members.length * 3);
   assert.deepEqual(writes[0], { range: "'Roster'!K4", values: [[0]] });
   assert.deepEqual(writes[1], { range: "'Roster'!G4", values: [[false]] });
   assert.deepEqual(writes[2], { range: "'Roster'!H4", values: [[false]] });
-  assert.ok(writes.some((w) => w.range === "'Ledger'!E5" && w.values[0][0] === ''));
-  assert.ok(writes.some((w) => w.range === "'Ledger'!E13" && w.values[0][0] === ''));
+  assert.ok(writes.every((w) => !w.range.startsWith("'Ledger'")));
 });
