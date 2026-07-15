@@ -1,8 +1,10 @@
 // /clockin and /clockout — weekly duty-hours tracking.
 // Open shifts live in KV (`shift:<discordUserId>`), hours accumulate in
-// roster column K, Last Active (J) is stamped on both commands, and Owed (G)
-// is auto-ticked when a member crosses WEEKLY_GOAL_HOURS. The sheet's own
-// COUNTIFS formulas compute # Actives and Totals from column G.
+// roster column K, Last Active (J) is stamped on both commands. Owed (G) is
+// only written on Sundays (17:30 UTC clear, 18:00 UTC close-out marks
+// members at WEEKLY_GOAL_HOURS+) — never mid-week, so the hand-maintained
+// Ledger tab sees a stable owed count all week. The sheet's own COUNTIFS
+// formulas compute # Actives and Totals from column G.
 // The Ledger tab is maintained by hand — the bot never writes to it.
 
 import { getAccessToken, batchWriteValues } from './gsheets.js';
@@ -113,23 +115,22 @@ export async function runClockOut(env, interaction, userId, username) {
   if (!member) return `⚠️ **@${username}** is not on the roster (Discord column). Report to an officer — your shift is still held open.`;
 
   const newTotal = roundHours(member.hours + hours);
-  const crossedGoal = !member.owed && newTotal >= WEEKLY_GOAL_HOURS;
+  const goalReached = newTotal >= WEEKLY_GOAL_HOURS;
 
   const updates = [
     { range: `'${tab}'!${COL.HOURS}${member.row}`, values: [[newTotal]] },
     ...lastActiveUpdate(tab, member, t.ms),
   ];
-  if (crossedGoal) updates.push({ range: `'${tab}'!${COL.OWED}${member.row}`, values: [[true]] });
   await batchWriteValues(token, env.CLOCKIN_SHEET_ID, updates);
 
   await env.STATE.delete(shiftKey(userId));
-  log('clockout.ok', { user: username, row: member.row, shiftHours: roundHours(hours), weekTotal: newTotal, crossedGoal });
+  log('clockout.ok', { user: username, row: member.row, shiftHours: roundHours(hours), weekTotal: newTotal, goalReached });
 
   const lines = [
     `🕐 **${member.name}** clocked out — ${fmtHours(hours)} this shift, **${fmtHours(newTotal)}** this week.`,
   ];
-  if (crossedGoal) lines.push(`✅ ${WEEKLY_GOAL_HOURS}h reached — marked **Owed** for this week's pay. The Dominion rewards diligence.`);
-  else if (!member.owed) lines.push(`${fmtHours(Math.max(0, WEEKLY_GOAL_HOURS - newTotal))} to go for this week's pay.`);
+  if (goalReached) lines.push(`✅ ${WEEKLY_GOAL_HOURS}h reached — you will be marked **Owed** at Sunday's close-out. The Dominion rewards diligence.`);
+  else lines.push(`${fmtHours(Math.max(0, WEEKLY_GOAL_HOURS - newTotal))} to go for this week's pay.`);
   return lines.join('\n');
 }
 

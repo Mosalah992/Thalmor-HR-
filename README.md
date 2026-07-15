@@ -17,7 +17,7 @@ On the roster sheet (row 3 headers, data from row 4):
 
 | Column | Written by the bot |
 |---|---|
-| **G Owed** ☑ | auto-ticked when weekly hours reach **8h** (manual ticks respected) |
+| **G Owed** ☑ | Sundays only — cleared 17:30 UTC, ticked at the 18:00 UTC close-out for members at **8h+** (never written mid-week, so the Ledger's owed count is stable all week) |
 | **H Paid** ☑ | never — managed by hand, unchecked at the weekly reset |
 | **J Last Active** | stamped on every clock-in/out, `YYYY-MM-DD HH:mm` UTC, only advances |
 | **K Total Hours** | weekly hours, green at ≥ 8h, reset every Sunday |
@@ -26,10 +26,11 @@ The **Ledger** tab computes pay itself: `# Actives` cells are `COUNTIFS` over th
 checkboxes per rank tier, `Total = Payment × # Actives`. The Ledger tab (including the
 **Names** cells) is adjusted by hand — the bot never writes to it.
 
-**Weekly close-out — Sundays 18:00 UTC** (Worker cron): posts the hours leaderboard
-(top 5 + climber of the week + who reached 8h) to `#clock-in`, then resets the week:
-Total Hours → 0, Owed/Paid unchecked. Shifts still open are discarded and named in
-the post.
+**Weekly cycle — Sundays** (Worker crons): at **17:30 UTC** all Owed marks are
+cleared. At **18:00 UTC** the close-out posts the hours leaderboard (top 5 +
+climber of the week + who reached 8h) to `#clock-in`, then rolls the week:
+Owed ticked for members at 8h+, Total Hours → 0, Paid unchecked. Shifts still
+open are discarded and named in the post.
 
 Forgot to clock out? The shift stays open until you `/clockout` — use a backdated
 `time` to close it honestly. Shifts can't exceed 24h and can't be backdated more

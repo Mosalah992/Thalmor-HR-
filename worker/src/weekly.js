@@ -1,8 +1,11 @@
-// Sunday 18:00 UTC weekly close-out (replaces the old Monday clock-ins
-// leaderboard): post the hours leaderboard to #clock-in, snapshot hours in KV
-// for next week's "climber" delta, then reset the week — Total Hours (K) to 0,
-// Owed (G) and Paid (H) unchecked, and any still-open shifts discarded
-// (named in the post). The Ledger tab is maintained by hand — never written.
+// Sunday weekly cycle. Owed (G) is written ONLY here, never mid-week, so the
+// hand-maintained Ledger tab sees a stable owed count all week.
+//   17:30 UTC — clear last week's Owed marks (all G unchecked).
+//   18:00 UTC — close-out: post the hours leaderboard to #clock-in, snapshot
+//   hours in KV for next week's "climber" delta, then roll the week — Owed (G)
+//   checked for members at WEEKLY_GOAL_HOURS+, Total Hours (K) to 0, Paid (H)
+//   unchecked, and any still-open shifts discarded (named in the post).
+// The Ledger tab is maintained by hand — never written.
 
 import { getAccessToken, batchWriteValues } from './gsheets.js';
 import { readRoster, COL } from './roster.js';
@@ -25,7 +28,7 @@ export function buildLeaderboard(members, prev, now, openShifts = []) {
     .filter((m) => m.hours > 0)
     .sort((a, b) => b.hours - a.hours)
     .slice(0, 5);
-  const owedCount = members.filter((m) => m.owed).length;
+  const owedCount = members.filter((m) => m.hours >= WEEKLY_GOAL_HOURS).length;
 
   const date = new Date(now).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', timeZone: 'UTC',
@@ -58,19 +61,37 @@ export function buildLeaderboard(members, prev, now, openShifts = []) {
   }
 
   lines.push('', `📋 ${FOOTERS[Math.floor(now / (7 * 24 * 60 * 60 * 1000)) % FOOTERS.length]}`);
-  lines.push('_Hours and pay markers now reset for the new week. Clock in with `/clockin`._');
+  lines.push('_Hours now reset for the new week; the **Owed** column shows who earned this week\'s pay. Clock in with `/clockin`._');
   return lines.join('\n');
 }
 
-/** Reset writes: hours 0, Owed/Paid unchecked for every member row. */
+/** 17:30 writes: uncheck Owed for every member row (last week's pay cycle over). */
+export function owedClearWrites(tab, members) {
+  return members.map((m) => ({ range: `'${tab}'!${COL.OWED}${m.row}`, values: [[false]] }));
+}
+
+/** 18:00 reset writes: Owed checked at goal hours+, hours 0, Paid unchecked. */
 export function resetWrites(tab, members) {
   const data = [];
   for (const m of members) {
     data.push({ range: `'${tab}'!${COL.HOURS}${m.row}`, values: [[0]] });
-    data.push({ range: `'${tab}'!${COL.OWED}${m.row}`, values: [[false]] });
+    data.push({ range: `'${tab}'!${COL.OWED}${m.row}`, values: [[m.hours >= WEEKLY_GOAL_HOURS]] });
     data.push({ range: `'${tab}'!${COL.PAID}${m.row}`, values: [[false]] });
   }
   return data;
+}
+
+/** Sunday 17:30 UTC cron: clear all Owed marks ahead of the 18:00 close-out. */
+export async function runOwedClear(env) {
+  const token = await getAccessToken(env);
+  const { tab, members } = await readRoster(env, token);
+  const owedBefore = members.filter((m) => m.owed).length;
+  const result = await batchWriteValues(token, env.CLOCKIN_SHEET_ID, owedClearWrites(tab, members));
+  log('weekly.owedclear.done', {
+    members: members.length,
+    owedBefore,
+    cells: result.totalUpdatedCells || 0,
+  });
 }
 
 export async function runWeeklyCloseout(env, now) {

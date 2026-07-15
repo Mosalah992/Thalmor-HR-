@@ -2,7 +2,8 @@
 // /add, /remove, /stock adjust and report Qty cells in the Smithing tab of
 // the Armory Google Sheet (quartermaster-only, ALLOWED_USER_IDS).
 // /clockin & /clockout track weekly duty hours on the clock-in roster sheet
-// (any roster member). Sundays 18:00 UTC: hours leaderboard + weekly reset.
+// (any roster member). Sundays: 17:30 UTC clears Owed marks, 18:00 UTC posts
+// the hours leaderboard + weekly reset (marks Owed for members at 8h+).
 //
 // Secrets: DISCORD_PUBLIC_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, DISCORD_BOT_TOKEN
 // Vars:    SHEET_ID, SMITHING_TAB, ALLOWED_USER_IDS, CLOCKIN_CHANNEL_ID,
@@ -12,7 +13,7 @@ import { getAccessToken, readLedgerRows, writeQty } from './gsheets.js';
 import { parseLedger, findItem, rankMatches } from './ledger.js';
 import { quoteForTime } from './quotes.js';
 import { runClockIn, runClockOut } from './clock.js';
-import { runWeeklyCloseout } from './weekly.js';
+import { runWeeklyCloseout, runOwedClear } from './weekly.js';
 import { log, logError } from './log.js';
 
 const HELP_TEXT = [
@@ -24,8 +25,8 @@ const HELP_TEXT = [
   '`/help` — this list.',
   '',
   '**The weekly cycle:**',
-  '• Hours accumulate in the roster; reach **8h** in a week and you are marked **Owed** for pay.',
-  '• Sundays **18:00 UTC**: attendance honors are posted, then hours and pay markers reset.',
+  '• Hours accumulate in the roster; reach **8h** in a week and you are marked **Owed** at the Sunday close-out.',
+  '• Sundays **17:30 UTC**: last week\'s Owed marks are cleared. **18:00 UTC**: attendance honors are posted, members at 8h+ are marked Owed, and hours reset.',
   '• Forgot to clock out? Your shift stays open — `/clockout` with a backdated `time` closes it. Shifts still open at the Sunday reset are discarded.',
   '• Limits: shifts up to 24h, backdating up to 7 days, no future times.',
   '',
@@ -275,6 +276,10 @@ async function postBulletin(env, scheduledTime) {
 
 export default {
   async scheduled(event, env, ctx) {
+    if (event.cron === '30 17 * * SUN') {
+      ctx.waitUntil(runOwedClear(env).catch((e) => logError('owedclear.fail', e)));
+      return;
+    }
     if (event.cron === '0 18 * * SUN') {
       ctx.waitUntil(
         runWeeklyCloseout(env, event.scheduledTime)

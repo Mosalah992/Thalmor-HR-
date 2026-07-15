@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildLeaderboard, resetWrites } from '../worker/src/weekly.js';
+import { buildLeaderboard, resetWrites, owedClearWrites } from '../worker/src/weekly.js';
 
 const NOW = Date.UTC(2026, 6, 19, 18, 0); // a Sunday 18:00 UTC
 
@@ -10,8 +10,9 @@ const member = (name, hours, owed = false, row = 4) => ({
 });
 
 test('buildLeaderboard: ranks by hours, zero-hour members excluded', () => {
+  // owed flags are cleared at 17:30, so the count must come from hours, not owed
   const members = [
-    member('Aeth', 2), member('Bril', 10, true), member('Cyr', 0), member('Dor', 8.5, true),
+    member('Aeth', 2), member('Bril', 10), member('Cyr', 0), member('Dor', 8.5),
   ];
   const out = buildLeaderboard(members, null, NOW);
   assert.match(out, /🥇 Bril — 10h/);
@@ -39,12 +40,22 @@ test('buildLeaderboard: empty week still posts', () => {
   assert.match(out, /No hours were logged this week/);
 });
 
-test('resetWrites: zeroes hours, unchecks Owed+Paid, never touches the Ledger tab', () => {
-  const members = [member('Aeth', 9, true, 4), member('Bril', 2, false, 7)];
+test('resetWrites: zeroes hours, marks Owed at 8h+, unchecks Paid, never touches the Ledger tab', () => {
+  const members = [member('Aeth', 9, false, 4), member('Bril', 2, false, 7)];
   const writes = resetWrites('Roster', members);
   assert.equal(writes.length, members.length * 3);
   assert.deepEqual(writes[0], { range: "'Roster'!K4", values: [[0]] });
-  assert.deepEqual(writes[1], { range: "'Roster'!G4", values: [[false]] });
+  assert.deepEqual(writes[1], { range: "'Roster'!G4", values: [[true]] }); // 9h ≥ 8h goal
   assert.deepEqual(writes[2], { range: "'Roster'!H4", values: [[false]] });
+  assert.deepEqual(writes[4], { range: "'Roster'!G7", values: [[false]] }); // 2h < goal
   assert.ok(writes.every((w) => !w.range.startsWith("'Ledger'")));
+});
+
+test('owedClearWrites: unchecks Owed for every row, nothing else', () => {
+  const members = [member('Aeth', 9, true, 4), member('Bril', 2, false, 7)];
+  const writes = owedClearWrites('Roster', members);
+  assert.deepEqual(writes, [
+    { range: "'Roster'!G4", values: [[false]] },
+    { range: "'Roster'!G7", values: [[false]] },
+  ]);
 });
