@@ -1,13 +1,16 @@
 // Thalmor Quartermaster — Discord Interactions endpoint (Cloudflare Worker).
 // /add, /remove, /stock adjust and report Qty cells in the Smithing tab of
-// the Armory Google Sheet (quartermaster-only, ALLOWED_USER_IDS).
+// the Armory Google Sheet. /add & /remove: quartermaster (ALLOWED_USER_IDS)
+// or any member holding a role named in ALLOWED_ROLE_NAMES; /set & /stock:
+// quartermaster only.
 // /clockin & /clockout track weekly duty hours on the clock-in roster sheet
-// (any roster member). Sundays: 17:30 UTC clears Owed marks, 18:00 UTC posts
-// the hours leaderboard + weekly reset (marks Owed for members at 8h+).
+// (any roster member). Mondays: 08:30 UTC clears Owed marks, 09:00 UTC
+// (3 AM CST) posts the hours leaderboard + weekly reset (marks Owed for
+// members at 8h+; shifts still open at reset keep running).
 //
 // Secrets: DISCORD_PUBLIC_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, DISCORD_BOT_TOKEN
-// Vars:    SHEET_ID, SMITHING_TAB, ALLOWED_USER_IDS, CLOCKIN_CHANNEL_ID,
-//          CLOCKIN_SHEET_ID
+// Vars:    SHEET_ID, SMITHING_TAB, ALLOWED_USER_IDS, ALLOWED_ROLE_NAMES,
+//          CLOCKIN_CHANNEL_ID, CLOCKIN_SHEET_ID
 
 import { getAccessToken, readLedgerRows, writeQty } from './gsheets.js';
 import { parseLedger, findItem, rankMatches } from './ledger.js';
@@ -17,7 +20,7 @@ import { runWeeklyCloseout, runOwedClear } from './weekly.js';
 import { log, logError } from './log.js';
 
 const HELP_TEXT = [
-  '☀️ **THALMOR HR — COMMAND LIST** ☀️',
+  '**THALMOR HR — COMMAND LIST**',
   '',
   '**Duty hours** — anyone on the roster (Discord column):',
   '`/clockin [time]` — start your shift. `time` is optional: a hammertime tag (`<t:1752480000:t>`, see <https://hammertime.cyou>) or unix seconds to backdate; defaults to right now.',
@@ -25,16 +28,16 @@ const HELP_TEXT = [
   '`/help` — this list.',
   '',
   '**The weekly cycle:**',
-  '• Hours accumulate in the roster; reach **8h** in a week and you are marked **Owed** at the Sunday close-out.',
-  '• Sundays **17:30 UTC**: last week\'s Owed marks are cleared. **18:00 UTC**: attendance honors are posted, members at 8h+ are marked Owed, and hours reset.',
-  '• Forgot to clock out? Your shift stays open — `/clockout` with a backdated `time` closes it. Shifts still open at the Sunday reset are discarded.',
+  '• Hours accumulate in the roster; reach **8h** in a week and you are marked **Owed** at the Monday close-out.',
+  '• Mondays **08:30 UTC**: last week\'s Owed marks are cleared. **09:00 UTC (3 AM CST)**: attendance honors are posted, members at 8h+ are marked Owed, and hours reset.',
+  '• Forgot to clock out? Your shift stays open — `/clockout` with a backdated `time` closes it. A shift still open at the Monday reset keeps running; it is not discarded.',
   '• Limits: shifts up to 24h, backdating up to 7 days, no future times.',
   '',
-  '**Smithing ledger** — quartermaster only:',
-  '`/add qty item` — add smithed items (e.g. `/add 1 Thalmor Boots`)',
-  '`/remove qty item` — remove issued/lost items, floors at 0',
-  '`/set qty item` — correct a count to an exact number (0 allowed)',
-  '`/stock [item]` — one item’s count + location, or the whole ledger summary',
+  '**Smithing ledger:**',
+  '`/add qty item` — add smithed items (e.g. `/add 1 Thalmor Boots`) — Quartermaster, Supply Corp, Blacksmith & Miner roles',
+  '`/remove qty item` — remove issued/lost items, floors at 0 — Quartermaster, Supply Corp, Blacksmith & Miner roles',
+  '`/set qty item` — correct a count to an exact number (0 allowed) — quartermaster only',
+  '`/stock [item]` — one item’s count + location, or the whole ledger summary — quartermaster only',
   'The *item* field autocompletes from the live [Armory sheet](<https://docs.google.com/spreadsheets/d/1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg/edit>).',
   '',
   '_The Dominion records deeds, not intentions._',
@@ -71,9 +74,52 @@ const invokerId = (interaction) =>
   (interaction.member && interaction.member.user && interaction.member.user.id) ||
   (interaction.user && interaction.user.id) || '';
 
-const isAllowed = (env, interaction) =>
+const isQuartermaster = (env, interaction) =>
   (env.ALLOWED_USER_IDS || '').split(',').map((s) => s.trim()).filter(Boolean)
     .includes(invokerId(interaction));
+
+/** Guild role id → name map, cached 5 min (interactions carry role ids only). */
+async function guildRoleMap(env, guildId, ctx) {
+  const cacheKey = new Request(`https://roles.cache.internal/${guildId}`);
+  const cache = caches.default;
+  const hit = await cache.match(cacheKey);
+  if (hit) return hit.json();
+
+  const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+    headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` },
+  });
+  if (!res.ok) throw new Error(`Discord roles ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const map = Object.fromEntries((await res.json()).map((r) => [r.id, r.name]));
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(map), {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=300' },
+  })));
+  return map;
+}
+
+async function hasAllowedRole(env, interaction, ctx) {
+  const memberRoles = (interaction.member && interaction.member.roles) || [];
+  const allowed = (env.ALLOWED_ROLE_NAMES || '').split(',')
+    .map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (!interaction.guild_id || !memberRoles.length || !allowed.length) return false;
+  try {
+    const map = await guildRoleMap(env, interaction.guild_id, ctx);
+    return memberRoles.some((id) => allowed.includes((map[id] || '').toLowerCase()));
+  } catch (e) {
+    logError('roles.fail', e, { guild: interaction.guild_id });
+    return false;
+  }
+}
+
+// /add & /remove (and their item autocomplete) are open to ALLOWED_ROLE_NAMES
+// holders; /set & /stock stay quartermaster-only.
+const ROLE_OPEN_COMMANDS = new Set(['add', 'remove']);
+
+async function isAllowed(env, interaction, ctx) {
+  if (isQuartermaster(env, interaction)) return true;
+  const name = interaction.data && interaction.data.name;
+  if (!ROLE_OPEN_COMMANDS.has(name)) return false;
+  return hasAllowedRole(env, interaction, ctx);
+}
 
 const option = (interaction, name) => {
   const opt = (interaction.data.options || []).find((o) => o.name === name);
@@ -103,7 +149,7 @@ async function loadLedgerCached(env, ctx) {
 }
 
 async function handleAutocomplete(interaction, env, ctx) {
-  if (!isAllowed(env, interaction)) return json({ type: 8, data: { choices: [] } });
+  if (!(await isAllowed(env, interaction, ctx))) return json({ type: 8, data: { choices: [] } });
   const t0 = Date.now();
   try {
     const focused = (interaction.data.options || []).find((o) => o.focused);
@@ -121,8 +167,8 @@ async function handleAutocomplete(interaction, env, ctx) {
 const suggestionText = (items, name) => {
   const close = rankMatches(items, name).map((it) => `• ${it.item} (${it.qty})`);
   return close.length
-    ? `❓ No item named **${name}** in the ledger. Did you mean:\n${close.join('\n')}`
-    : `❓ No item named **${name}** in the ledger, and nothing close to it either.`;
+    ? `No item named **${name}** in the ledger. Did you mean:\n${close.join('\n')}`
+    : `No item named **${name}** in the ledger, and nothing close to it either.`;
 };
 
 async function runAdd(env, interaction, sign) {
@@ -141,7 +187,7 @@ async function runAdd(env, interaction, sign) {
   }
   await writeQty(env, token, it.row, newQty);
   const verb = sign > 0 ? 'Added' : 'Removed';
-  return `⚒️ ${verb} ${amount} — **${it.item}**: ${it.qty} → **${newQty}**${note}`;
+  return `${verb} ${amount} — **${it.item}**: ${it.qty} → **${newQty}**${note}`;
 }
 
 async function runSet(env, interaction) {
@@ -152,9 +198,9 @@ async function runSet(env, interaction) {
   const it = findItem(items, name);
   if (!it) return suggestionText(items, name);
 
-  if (newQty === it.qty) return `📦 **${it.item}** is already at ${it.qty} — nothing changed.`;
+  if (newQty === it.qty) return `**${it.item}** is already at ${it.qty} — nothing changed.`;
   await writeQty(env, token, it.row, newQty);
-  return `📝 Corrected — **${it.item}**: ${it.qty} → **${newQty}**`;
+  return `Corrected — **${it.item}**: ${it.qty} → **${newQty}**`;
 }
 
 async function runStock(env, interaction) {
@@ -165,7 +211,7 @@ async function runStock(env, interaction) {
     const it = findItem(items, String(name));
     if (!it) return suggestionText(items, String(name));
     const loc = it.location ? ` · ${it.location}` : '';
-    return `📦 **${it.item}**: ${it.qty}${loc} _(${it.section})_`;
+    return `**${it.item}**: ${it.qty}${loc} _(${it.section})_`;
   }
 
   const sections = new Map();
@@ -178,7 +224,7 @@ async function runStock(env, interaction) {
   const lines = [...sections].map(
     ([sec, s]) => `**${sec}** — ${s.count} items, ${s.qty} in stock`,
   );
-  return `📦 **Smithing ledger**\n${lines.join('\n')}`;
+  return `**Smithing ledger**\n${lines.join('\n')}`;
 }
 
 /** Edit the deferred response with the final content. */
@@ -198,7 +244,7 @@ const invokerUsername = (interaction) =>
   (interaction.member && interaction.member.user && interaction.member.user.username) ||
   (interaction.user && interaction.user.username) || '';
 
-function handleCommand(interaction, env, ctx) {
+async function handleCommand(interaction, env, ctx) {
   const name = interaction.data.name;
   if (name === 'help') return json({ type: 4, data: { content: HELP_TEXT, flags: 64 } });
 
@@ -216,7 +262,7 @@ function handleCommand(interaction, env, ctx) {
         log('command.ok', { command: name, user: username, ms: Date.now() - t0, reply: content.slice(0, 120) });
       } catch (e) {
         logError('command.fail', e, { command: name, user: username, ms: Date.now() - t0 });
-        content = `❌ ${e.message}`;
+        content = e.message;
       }
       try {
         await editReply(interaction, content);
@@ -228,9 +274,13 @@ function handleCommand(interaction, env, ctx) {
     return json({ type: 5 }); // public deferred — the reply is the channel's duty log
   }
 
-  if (!isAllowed(env, interaction)) {
+  if (!(await isAllowed(env, interaction, ctx))) {
     log('command.refused', { command: name, user: invokerId(interaction) });
-    return ephemeral('⛔ Quartermaster only — these commands adjust the armory ledger.');
+    return ephemeral(
+      ROLE_OPEN_COMMANDS.has(name)
+        ? 'This command needs the **Quartermaster**, **Supply Corp**, **Blacksmith** or **Miner** role.'
+        : 'Quartermaster only — this command adjusts the armory ledger.',
+    );
   }
 
   const t0 = Date.now();
@@ -245,7 +295,7 @@ function handleCommand(interaction, env, ctx) {
       log('command.ok', { command: name, ms: Date.now() - t0, reply: content.slice(0, 120) });
     } catch (e) {
       logError('command.fail', e, { command: name, ms: Date.now() - t0 });
-      content = `❌ ${e.message}`;
+      content = e.message;
     }
     try {
       await editReply(interaction, content);
@@ -261,7 +311,7 @@ function handleCommand(interaction, env, ctx) {
 
 /** Cron (every 3 h): post the next embassy bulletin quote to #clock-in. */
 async function postBulletin(env, scheduledTime) {
-  const content = `☀️📋 ${quoteForTime(scheduledTime)}`;
+  const content = quoteForTime(scheduledTime);
   const res = await fetch(`https://discord.com/api/v10/channels/${env.CLOCKIN_CHANNEL_ID}/messages`, {
     method: 'POST',
     headers: {
@@ -276,11 +326,11 @@ async function postBulletin(env, scheduledTime) {
 
 export default {
   async scheduled(event, env, ctx) {
-    if (event.cron === '30 17 * * SUN') {
+    if (event.cron === '30 8 * * MON') {
       ctx.waitUntil(runOwedClear(env).catch((e) => logError('owedclear.fail', e)));
       return;
     }
-    if (event.cron === '0 18 * * SUN') {
+    if (event.cron === '0 9 * * MON') {
       ctx.waitUntil(
         runWeeklyCloseout(env, event.scheduledTime)
           .then((content) => log('weekly.posted', { content: content.slice(0, 120) }))

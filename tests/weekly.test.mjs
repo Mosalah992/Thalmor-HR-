@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildLeaderboard, resetWrites, owedClearWrites } from '../worker/src/weekly.js';
 
-const NOW = Date.UTC(2026, 6, 19, 18, 0); // a Sunday 18:00 UTC
+const NOW = Date.UTC(2026, 6, 20, 9, 0); // a Monday 09:00 UTC (3 AM CST)
 
 const member = (name, hours, owed = false, row = 4) => ({
   row, rank: 'Junior Soldier', name, discord: `@${name.toLowerCase()}`,
@@ -10,14 +10,14 @@ const member = (name, hours, owed = false, row = 4) => ({
 });
 
 test('buildLeaderboard: ranks by hours, zero-hour members excluded', () => {
-  // owed flags are cleared at 17:30, so the count must come from hours, not owed
+  // owed flags are cleared at 08:30, so the count must come from hours, not owed
   const members = [
     member('Aeth', 2), member('Bril', 10), member('Cyr', 0), member('Dor', 8.5),
   ];
   const out = buildLeaderboard(members, null, NOW);
-  assert.match(out, /🥇 Bril — 10h/);
-  assert.match(out, /🥈 Dor — 8\.5h/);
-  assert.match(out, /🥉 Aeth — 2h/);
+  assert.match(out, /1\. Bril — 10h/);
+  assert.match(out, /2\. Dor — 8\.5h/);
+  assert.match(out, /3\. Aeth — 2h/);
   assert.doesNotMatch(out, /Cyr/);
   assert.match(out, /2 member\(s\) reached 8h/);
 });
@@ -28,11 +28,11 @@ test('buildLeaderboard: climber uses hours delta vs snapshot', () => {
   assert.match(out, /Climber of the week:\*\* Bril \(\+6h\)/);
 });
 
-test('buildLeaderboard: discarded open shifts are named', () => {
+test('buildLeaderboard: open shifts carried into the new week are named, not discarded', () => {
   const out = buildLeaderboard([member('Aeth', 1)], null, NOW, [
     { userId: '1', username: 'sleepy_elf', startMs: NOW - 3600000 },
   ]);
-  assert.match(out, /Open shifts discarded .*: sleepy_elf/);
+  assert.match(out, /Still clocked in .*not discarded.*: sleepy_elf/);
 });
 
 test('buildLeaderboard: empty week still posts', () => {

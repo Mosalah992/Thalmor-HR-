@@ -17,20 +17,21 @@ On the roster sheet (row 3 headers, data from row 4):
 
 | Column | Written by the bot |
 |---|---|
-| **G Owed** ☑ | Sundays only — cleared 17:30 UTC, ticked at the 18:00 UTC close-out for members at **8h+** (never written mid-week, so the Ledger's owed count is stable all week) |
+| **G Owed** ☑ | Mondays only — cleared 08:30 UTC, ticked at the 09:00 UTC (3 AM CST) close-out for members at **8h+** (never written mid-week, so the Ledger's owed count is stable all week) |
 | **H Paid** ☑ | never — managed by hand, unchecked at the weekly reset |
 | **J Last Active** | stamped on every clock-in/out, `YYYY-MM-DD HH:mm` UTC, only advances |
-| **K Total Hours** | weekly hours, green at ≥ 8h, reset every Sunday |
+| **K Total Hours** | weekly hours, green at ≥ 8h, reset every Monday |
 
 The **Ledger** tab computes pay itself: `# Actives` cells are `COUNTIFS` over the Owed
 checkboxes per rank tier, `Total = Payment × # Actives`. The Ledger tab (including the
 **Names** cells) is adjusted by hand — the bot never writes to it.
 
-**Weekly cycle — Sundays** (Worker crons): at **17:30 UTC** all Owed marks are
-cleared. At **18:00 UTC** the close-out posts the hours leaderboard (top 5 +
-climber of the week + who reached 8h) to `#clock-in`, then rolls the week:
-Owed ticked for members at 8h+, Total Hours → 0, Paid unchecked. Shifts still
-open are discarded and named in the post.
+**Weekly cycle — Mondays, 3 AM CST** (Worker crons): at **08:30 UTC** all Owed marks
+are cleared. At **09:00 UTC (3 AM CST)** the close-out posts the hours leaderboard
+(top 5 + climber of the week + who reached 8h) to `#clock-in`, then rolls the week:
+Owed ticked for members at 8h+, Total Hours → 0, Paid unchecked. A shift still open
+at reset keeps running (named in the post) and is never force-closed — it ends only
+when its holder runs `/clockout`.
 
 Forgot to clock out? The shift stays open until you `/clockout` — use a backdated
 `time` to close it honestly. Shifts can't exceed 24h and can't be backdated more
@@ -47,7 +48,9 @@ Slash commands for the **Smithing** tab of the
 - `/stock [item]` — one item's count + storage location, or a per-section summary
 
 The `item` field autocompletes from the live sheet; unknown names get "did you mean"
-suggestions and never write. Usable only by the Discord IDs in `ALLOWED_USER_IDS`.
+suggestions and never write. `/add` and `/remove` are open to members holding a role
+named in `ALLOWED_ROLE_NAMES` (Quartermaster, Supply Corp, Blacksmith, Miner — matched by
+name via the Discord API); `/set` and `/stock` remain limited to the Discord IDs in `ALLOWED_USER_IDS`.
 
 ## Operations
 
@@ -60,7 +63,7 @@ cd worker && npx wrangler@3 deploy  # deploy (wrangler 3 — Node 18 can't run w
 
 Worker secrets (`npx wrangler@3 secret put …` from `worker/`): `DISCORD_PUBLIC_KEY`,
 `GOOGLE_SERVICE_ACCOUNT_JSON`, `DISCORD_BOT_TOKEN`. Vars and the two cron triggers
-(3-hourly bulletin, Sunday close-out) live in [worker/wrangler.toml](worker/wrangler.toml).
+(3-hourly bulletin, Monday 3 AM CST close-out) live in [worker/wrangler.toml](worker/wrangler.toml).
 The app's Interactions Endpoint URL points at the Worker
 (`https://thalmor-quartermaster.salaz4r.workers.dev`).
 

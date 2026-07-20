@@ -3,11 +3,12 @@ main = "src/index.js"
 # Date kept within wrangler@3's supported range (Node 18 on this machine can't run wrangler@4)
 compatibility_date = "2024-09-23"
 
-# Every 3 h: bulletin quote (src/quotes.js). Sundays 17:30 UTC: clear Owed
-# marks; 18:00 UTC: weekly hours leaderboard + week reset (marks Owed for 8h+)
-# (src/weekly.js) — index.js routes by event.cron.
+# Every 3 h: bulletin quote (src/quotes.js). Mondays 08:30 UTC: clear Owed
+# marks; 09:00 UTC (3 AM CST): weekly hours leaderboard + week reset (marks
+# Owed for 8h+; open shifts are left running, not discarded) (src/weekly.js)
+# — index.js routes by event.cron.
 [triggers]
-crons = ["0 */3 * * *", "30 17 * * SUN", "0 18 * * SUN"]
+crons = ["0 */3 * * *", "30 8 * * MON", "0 9 * * MON"]
 
 # Open clock-in shifts (shift:<userId>) + weekly hours snapshot for
 # "climber of the week" deltas
@@ -20,8 +21,12 @@ id = "a49caad771614a1eae647d580f235ea1"
 SHEET_ID = "1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg"
 # Tab holding the smithing ledger
 SMITHING_TAB = "Smithing"
-# Comma-separated Discord user IDs allowed to use the commands (quartermaster only)
+# Comma-separated Discord user IDs with full smithing access (all commands)
 ALLOWED_USER_IDS = "269093657305415683"
+# Comma-separated role names (case-insensitive) whose holders may use /add & /remove.
+# Matched by name via the Discord API (cached 5 min) — renaming a role in Discord
+# requires updating this list too.
+ALLOWED_ROLE_NAMES = "Quartermaster,Supply Corp,Blacksmith,Miner"
 # #clock-in channel — the 3-hourly bulletin is posted here
 CLOCKIN_CHANNEL_ID = "1511723933609754797"
 # Clock-in roster spreadsheet (read for the weekly leaderboard)

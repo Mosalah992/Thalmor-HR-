@@ -1,44 +1,44 @@
 // Embassy bulletin quotes — posted to #clock-in every 3 hours by the cron
-// trigger. Randomized rotation: each full pass through the list is shuffled
-// with a seed derived from the cycle number, so the order looks random but
-// every quote appears exactly once per cycle (no back-to-back repeats).
+// trigger, written in the voice of Justiciar Ancano. Randomized rotation:
+// each full pass through the list is shuffled with a seed derived from the
+// cycle number, so the order looks random but every quote appears exactly
+// once per cycle (no back-to-back repeats).
 
 export const QUOTES = [
-  // ─── Rivi, Embassy Physician ───
-  'Senior Staff Rivi has healed forty-two agents this month through the medical application of purring. The Dominion does not question results. Neither should you.',
-  "Rivi's clinic reports a 100% recovery rate. Agents who did not recover were reclassified before the report was filed.",
-  "Wounded agents will report to Rivi. Agents faking wounds to receive purr therapy will be assigned to Justiciar Ganaril's Fireball lecture as live demonstration material.",
-  'The Embassy physician is a Khajiit. The Embassy is aware of the irony. The Embassy has decided the irony is classified.',
-  "Rivi reminds all agents that 'I'll walk it off' is not a treatment plan recognized by the Dominion. Report to the clinic. She can hear your ribs from here.",
+  // ─── Missed clock-in / clock-out ───
+  'You forgot to clock in. Or perhaps you simply believed the ledger would not notice. It notices everything.',
+  'Failing to clock out is not an oversight, agent. It is a confession that your time was never worth recording in the first place.',
+  'I have neither the time nor the patience to track down agents who cannot be bothered to press one button before leaving. Do better.',
+  'An open shift with no clock-out is a wound the ledger cannot close. Neither, apparently, can you.',
+  'You are late to record your own labor. How thoroughly unremarkable.',
 
-  // ─── Orion & The Goon Squad ───
-  "Orion and his associates were observed 'conducting field exercises' near the stables. The stables disagree. An inquiry has been opened, and closed, and reopened.",
-  "The Embassy does not have a 'goon squad.' The Embassy has an Irregular Tactical Element that answers to Orion and, allegedly, to reason.",
-  "Whatever Orion's squad did last Loredas is now a training scenario. Congratulations. This is not a compliment.",
-  "Orion's men have been reminded that 'morale operations' require prior written approval. Laughter heard from the barracks is being audited.",
+  // ─── Missed the 8h weekly goal ───
+  'Eight hours. A number small enough to count on both hands, and yet half of you cannot reach it.',
+  'You did not make your hours this week. I am not disappointed — disappointment would require I expected more of you.',
+  'The Dominion does not pay for potential. It pays for hours logged. You have offered neither in sufficient quantity.',
+  'Your weekly total is an embarrassment I will not dignify with further commentary — though clearly I already have.',
 
-  // ─── The Nuramor Situation ───
-  'The Embassy now employs six agents of House Nuramor. Command is no longer certain this was a recruitment drive and not an annexation.',
-  "If you shout 'Nuramor!' in the courtyard, statistically, someone will answer. This has been weaponized. Details are classified.",
-  'New arrivals are advised: you do not need to be a Nuramor to serve the Dominion. It simply appears to help.',
-  'The ledger clerk has requested a separate page for House Nuramor. The request was denied. The clerk has requested a transfer. That was also denied.',
+  // ─── Why are there so many Nuramors ───
+  "House Nuramor now accounts for a suspicious fraction of this embassy's roster. I have not ordered an investigation. Yet.",
+  'Sixteen Nuramors are now enrolled in this embassy. At this rate the Dominion will require a second House Nuramor merely to staff the first.',
+  'One Nuramor is a soldier. Sixteen is a pattern. I dislike patterns I did not authorize.',
+  'Someone will explain to me why House Nuramor multiplies faster than the paperwork required to process them. Sixteen, and counting. I am listening. I am not impressed.',
 
-  // ─── General Ledger Menace ───
-  'Have you praised the Aldmeri Dominion on main today?',
-  'Agents who clock in but never clock out exist in a state the Treasury refuses to define and refuses to pay.',
-  'The attendance ledger does not forget. The attendance ledger does not forgive. The attendance ledger has been enchanted, and it is watching.',
-  "Reminder: 'I was active, I just didn't clock in' is a confession, not an excuse.",
+  // ─── Auramon Nuramor and the barracks windows ───
+  "Agent Auramon Nuramor was found 'testing' something combustible near the barracks. The windows did not survive the test. His next pay will.",
+  'Auramon Nuramor has been informed, calmly, that explosives are not a substitute for competence. The glaziers have been informed less calmly, and billed accordingly — to him.',
+  'The barracks have new windows. Agent Nuramor has a smaller paycheck. The Dominion considers this a fair exchange, and a lesson he will not need repeating.',
 
-  // ─── Personnel dispatches ───
-  'Lord Lakkon misses his husband very much. But no one will miss you if you never show up.',
-  'All agents with less than 8h of service this week are invited to a private lecture with Justiciar Ganaril. The topic will be the effects of Fireball on the body.',
-  'Lord Elvander and Lady Celeriel have been carrying the Thalmor Embassy on their backs for the last weeks. Find a special someone who motivates you to clock in every day just like them.',
-  'Administrator Ancarion has successfully forged a dagger made from mer flesh. This has nothing to do with the missing recruit.',
-  "Fen'ril Clawheart honors the Green Pact AND the attendance ledger. A Bosmer in an Altmer navy, out-attending half of you.",
-  'Baron Telandor advises Command. Command advises you to clock in. The Dominion does not repeat its advice.',
-  'The Embassy reminds new arrivals that "Just Joined" is a status, not a lifestyle. The Dominion measures loyalty in appearances.',
-  'INACTIVE is written in the ledger in red ink. Lady Celeriel requisitioned the red ink from Alinor in bulk. Do not justify the shipment.',
-  'Recruits marked "CHECK" will be checked. Recruits marked "ACTIVE" will be verified. Recruits marked nothing should be very, very worried.',
+  // ─── Lady Celeriel carrying the embassy ───
+  'Lady Celeriel manages the ledger, the inspections, and apparently the collective attention span of this embassy. You cannot manage eight hours.',
+  "While Lady Celeriel conducts inspections and keeps the Dominion's paperwork from collapsing entirely, several of you cannot locate the clock-in command. I have reviewed both tasks. Only one of you is struggling.",
+  'Lady Celeriel juggles administration and inspection without complaint. You are asked only to press a button twice a day. Draw your own comparison.',
+
+  // ─── Miscellaneous embassy dispatches ───
+  "Senior Staff Rivi has healed most of this embassy's soldiers this month. Whether through medicine or through purring remains unclear. I did not ask further.",
+  'First Emissary Ganaril requires all agents who forgot to clock in to report to his office. Bring your own burn ointment. He will not provide it twice.',
+  'Former Emissary Malen is no longer with us, having been struck by a Dremora. The Dominion records this as an unfortunate outcome, and an entirely avoidable one.',
+  "Lord Lakkon's entire contribution to today's briefing was 'FIREBALL.' The Dominion has chosen not to elaborate.",
 ];
 
 const SLOT_MS = 3 * 60 * 60 * 1000; // one quote per 3-hour cron slot

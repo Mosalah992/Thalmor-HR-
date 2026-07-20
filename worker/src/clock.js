@@ -1,10 +1,11 @@
 // /clockin and /clockout — weekly duty-hours tracking.
 // Open shifts live in KV (`shift:<discordUserId>`), hours accumulate in
 // roster column K, Last Active (J) is stamped on both commands. Owed (G) is
-// only written on Sundays (17:30 UTC clear, 18:00 UTC close-out marks
-// members at WEEKLY_GOAL_HOURS+) — never mid-week, so the hand-maintained
-// Ledger tab sees a stable owed count all week. The sheet's own COUNTIFS
-// formulas compute # Actives and Totals from column G.
+// only written on Mondays (08:30 UTC clear, 09:00 UTC / 3 AM CST close-out
+// marks members at WEEKLY_GOAL_HOURS+) — never mid-week, so the
+// hand-maintained Ledger tab sees a stable owed count all week. A shift still
+// open at the Monday reset keeps running — it is not discarded. The sheet's
+// own COUNTIFS formulas compute # Actives and Totals from column G.
 // The Ledger tab is maintained by hand — the bot never writes to it.
 
 import { getAccessToken, batchWriteValues } from './gsheets.js';
@@ -60,10 +61,10 @@ export function effectiveTime(raw, nowMs) {
   if (raw === undefined || raw === null || String(raw).trim() === '') return { ms: nowMs };
   const ms = parseTimeOption(raw);
   if (ms === null) {
-    return { error: '⚠️ Could not read that time. Use a hammertime tag like `<t:1752480000:t>` (hammertime.cyou) or plain unix seconds — or omit it to use right now.' };
+    return { error: 'Could not read that time. Use a hammertime tag like `<t:1752480000:t>` (hammertime.cyou) or plain unix seconds — or omit it to use right now.' };
   }
-  if (ms > nowMs + FUTURE_SLACK_MS) return { error: `⚠️ That time is in the future (${hammertime(ms)}). The Dominion records deeds, not intentions.` };
-  if (ms < nowMs - MAX_BACKDATE_DAYS * 24 * 3600 * 1000) return { error: `⚠️ That time is more than ${MAX_BACKDATE_DAYS} days ago — too far back for this week's records.` };
+  if (ms > nowMs + FUTURE_SLACK_MS) return { error: `That time is in the future (${hammertime(ms)}). The Dominion records deeds, not intentions.` };
+  if (ms < nowMs - MAX_BACKDATE_DAYS * 24 * 3600 * 1000) return { error: `That time is more than ${MAX_BACKDATE_DAYS} days ago — too far back for this week's records.` };
   return { ms };
 }
 
@@ -77,11 +78,11 @@ export async function runClockIn(env, interaction, userId, username) {
   const token = await getAccessToken(env);
   const { tab, members } = await readRoster(env, token);
   const member = matchMember(members, username);
-  if (!member) return `⚠️ **@${username}** is not on the roster (Discord column). Report to an officer to be enrolled before clocking in.`;
+  if (!member) return `**@${username}** is not on the roster (Discord column). Report to an officer to be enrolled before clocking in.`;
 
   const existing = await env.STATE.get(shiftKey(userId), 'json');
   if (existing) {
-    return `⚠️ ${member.name}, you are already clocked in since ${hammertime(existing.startMs)}. Close it with \`/clockout\` (add a backdated \`time\` if you forgot).`;
+    return `${member.name}, you are already clocked in since ${hammertime(existing.startMs)}. Close it with \`/clockout\` (add a backdated \`time\` if you forgot).`;
   }
 
   await env.STATE.put(shiftKey(userId), JSON.stringify({ username, startMs: t.ms }));
@@ -90,7 +91,7 @@ export async function runClockIn(env, interaction, userId, username) {
   await batchWriteValues(token, env.CLOCKIN_SHEET_ID, updates);
 
   log('clockin.ok', { user: username, row: member.row, startMs: t.ms });
-  return `🕐 **${member.name}** clocked in — ${hammertime(t.ms)}. Serve well; the Dominion is watching.`;
+  return `**${member.name}** clocked in — ${hammertime(t.ms)}. Serve well; the Dominion is watching.`;
 }
 
 export async function runClockOut(env, interaction, userId, username) {
@@ -99,20 +100,20 @@ export async function runClockOut(env, interaction, userId, username) {
   if (t.error) return t.error;
 
   const shift = await env.STATE.get(shiftKey(userId), 'json');
-  if (!shift) return `⚠️ **@${username}**, no open shift found. Clock in first with \`/clockin\`.`;
+  if (!shift) return `**@${username}**, no open shift found. Clock in first with \`/clockin\`.`;
 
   const hours = (t.ms - shift.startMs) / 3600000;
   if (hours <= 0) {
-    return `⚠️ That clock-out (${hammertime(t.ms)}) is before your clock-in (${hammertime(shift.startMs)}). Give a later \`time\`.`;
+    return `That clock-out (${hammertime(t.ms)}) is before your clock-in (${hammertime(shift.startMs)}). Give a later \`time\`.`;
   }
   if (hours > MAX_SHIFT_HOURS) {
-    return `⚠️ That shift would be ${fmtHours(hours)} — longer than ${MAX_SHIFT_HOURS}h. If you forgot to clock out, run \`/clockout\` again with a backdated \`time\` (hammertime tag).`;
+    return `That shift would be ${fmtHours(hours)} — longer than ${MAX_SHIFT_HOURS}h. If you forgot to clock out, run \`/clockout\` again with a backdated \`time\` (hammertime tag).`;
   }
 
   const token = await getAccessToken(env);
   const { tab, members } = await readRoster(env, token);
   const member = matchMember(members, username);
-  if (!member) return `⚠️ **@${username}** is not on the roster (Discord column). Report to an officer — your shift is still held open.`;
+  if (!member) return `**@${username}** is not on the roster (Discord column). Report to an officer — your shift is still held open.`;
 
   const newTotal = roundHours(member.hours + hours);
   const goalReached = newTotal >= WEEKLY_GOAL_HOURS;
@@ -127,9 +128,9 @@ export async function runClockOut(env, interaction, userId, username) {
   log('clockout.ok', { user: username, row: member.row, shiftHours: roundHours(hours), weekTotal: newTotal, goalReached });
 
   const lines = [
-    `🕐 **${member.name}** clocked out — ${fmtHours(hours)} this shift, **${fmtHours(newTotal)}** this week.`,
+    `**${member.name}** clocked out — ${fmtHours(hours)} this shift, **${fmtHours(newTotal)}** this week.`,
   ];
-  if (goalReached) lines.push(`✅ ${WEEKLY_GOAL_HOURS}h reached — you will be marked **Owed** at Sunday's close-out. The Dominion rewards diligence.`);
+  if (goalReached) lines.push(`${WEEKLY_GOAL_HOURS}h reached — you will be marked **Owed** at Monday's close-out. The Dominion rewards diligence.`);
   else lines.push(`${fmtHours(Math.max(0, WEEKLY_GOAL_HOURS - newTotal))} to go for this week's pay.`);
   return lines.join('\n');
 }
