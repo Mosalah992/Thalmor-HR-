@@ -39,6 +39,16 @@ export const QUOTES = [
   'First Emissary Ganaril requires all agents who forgot to clock in to report to his office. Bring your own burn ointment. He will not provide it twice.',
   'Former Emissary Malen is no longer with us, having been struck by a Dremora. The Dominion records this as an unfortunate outcome, and an entirely avoidable one.',
   "Lord Lakkon's entire contribution to today's briefing was 'FIREBALL.' The Dominion has chosen not to elaborate.",
+
+  // ─── Overheard around the embassy ───
+  "If you'd had any nuts we'd have survived, orc. — Nelos Onmar",
+  'Wait! My friend, my friend, my friend... WE MUST KILL THIS MAN. — Demetrius and the Vigilants',
+  'Is it just me, or is one in three Thalmor a Talos kisser? — Cobble',
+  "Life is like a wiener: it gets hard sometimes for no reason, but it doesn't stay hard for long. — Annatar Larethiane",
+  'You find yourself with a dirty condom in your ass. Do you tell anyone? No... want to go camping? — Verux',
+  "It's like being propositioned by a 6 when you're hoping for a 9 or a 10, but it's late at night, and you just don't care anymore. — Thorgim Hammersmite, moments before his execution",
+  "So, y'all come here often? Uh, somewhat — sometimes I like to come on the floor. — Overheard at the embassy gates",
+  'I thrive off negativity. — Lady Nyssara',
 ];
 
 const SLOT_MS = 3 * 60 * 60 * 1000; // one quote per 3-hour cron slot
