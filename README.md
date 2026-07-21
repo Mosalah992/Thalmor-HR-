@@ -11,7 +11,10 @@ Any member whose Discord username matches roster column **E** can use:
 
 - `/clockin [time]` — start a shift. Optional `time` backdates it: a hammertime tag
   (`<t:1752480000:t>`) or plain unix seconds; defaults to right now.
-- `/clockout [time]` — end the shift and log the hours.
+- `/clockout [time]` — end the shift and log the hours. Clocking out with no open
+  shift earns a random Ancano rebuke; a single shift of **12h+** earns a rare line
+  of praise.
+- `/help` — the full command list, posted ephemerally.
 
 On the roster sheet (row 3 headers, data from row 4):
 
@@ -37,12 +40,22 @@ Forgot to clock out? The shift stays open until you `/clockout` — use a backda
 `time` to close it honestly. Shifts can't exceed 24h and can't be backdated more
 than 7 days.
 
+## Embassy bulletin
+
+Every 3 hours a quote in Justiciar Ancano's voice is posted to `#clock-in`, drawn
+from the ~100-line rotation in [worker/src/quotes.js](worker/src/quotes.js). Each
+full pass through the list is shuffled deterministically (seeded by the cycle
+number), so the order looks random but no quote repeats until every other has
+posted. Two of its sets double as the live `/clockout` replies above. **Editing
+quotes only takes effect after a deploy** — the Worker serves whatever was last
+deployed, not what is committed.
+
 ## Smithing commands (quartermaster)
 
 Slash commands for the **Smithing** tab of the
 [Armory sheet](https://docs.google.com/spreadsheets/d/1McJOIBKWVdOF2L6UDIuR4Z74mDH_Eo8b2e3JLT0OqWg/edit):
 
-- `/add qty item` — add smithed items (e.g. `/add 1 item:Thalmor Boots`)
+- `/add qty item` — add smithed items (e.g. `/add 1 Thalmor Boots`)
 - `/remove qty item` — remove items, floored at 0
 - `/set qty item` — correct a count to an exact number (0 allowed)
 - `/stock [item]` — one item's count + storage location, or a per-section summary
@@ -55,15 +68,16 @@ name via the Discord API); `/set` and `/stock` remain limited to the Discord IDs
 ## Operations
 
 ```bash
-npm test                       # unit tests (pure functions, no network)
-node scripts/setup-sheet.js    # one-time sheet migration (idempotent, --dry-run supported)
-node scripts/register-commands.js   # (re-)register the slash commands
+npm test                            # unit tests (pure functions, no network)
+npm run setup-sheet                 # one-time sheet migration (idempotent, --dry-run supported)
+npm run register                    # (re-)register the slash commands
 cd worker && npx wrangler@3 deploy  # deploy (wrangler 3 — Node 18 can't run wrangler 4)
 ```
 
 Worker secrets (`npx wrangler@3 secret put …` from `worker/`): `DISCORD_PUBLIC_KEY`,
-`GOOGLE_SERVICE_ACCOUNT_JSON`, `DISCORD_BOT_TOKEN`. Vars and the two cron triggers
-(3-hourly bulletin, Monday 3 AM CST close-out) live in [worker/wrangler.toml](worker/wrangler.toml).
+`GOOGLE_SERVICE_ACCOUNT_JSON`, `DISCORD_BOT_TOKEN`. Vars and the three cron triggers
+(3-hourly bulletin; Mondays 08:30 UTC Owed clear and 09:00 UTC / 3 AM CST close-out)
+live in [worker/wrangler.toml](worker/wrangler.toml).
 The app's Interactions Endpoint URL points at the Worker
 (`https://thalmor-quartermaster.salaz4r.workers.dev`).
 
