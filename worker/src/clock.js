@@ -10,11 +10,13 @@
 
 import { getAccessToken, batchWriteValues } from './gsheets.js';
 import { readRoster, matchMember, COL } from './roster.js';
+import { CLOCK_IN_QUOTES, PRAISE_QUOTES, randomQuote } from './quotes.js';
 import { log } from './log.js';
 
 export const WEEKLY_GOAL_HOURS = 8;
 const SHIFT_PREFIX = 'shift:';
 const MAX_SHIFT_HOURS = 24;
+const LONG_SHIFT_HOURS = 12;
 const MAX_BACKDATE_DAYS = 7;
 const FUTURE_SLACK_MS = 5 * 60 * 1000;
 
@@ -100,7 +102,9 @@ export async function runClockOut(env, interaction, userId, username) {
   if (t.error) return t.error;
 
   const shift = await env.STATE.get(shiftKey(userId), 'json');
-  if (!shift) return `**@${username}**, no open shift found. Clock in first with \`/clockin\`.`;
+  if (!shift) {
+    return `${randomQuote(CLOCK_IN_QUOTES)}\n**@${username}**, no open shift found. Clock in first with \`/clockin\`.`;
+  }
 
   const hours = (t.ms - shift.startMs) / 3600000;
   if (hours <= 0) {
@@ -132,6 +136,7 @@ export async function runClockOut(env, interaction, userId, username) {
   ];
   if (goalReached) lines.push(`${WEEKLY_GOAL_HOURS}h reached — you will be marked **Owed** at Monday's close-out. The Dominion rewards diligence.`);
   else lines.push(`${fmtHours(Math.max(0, WEEKLY_GOAL_HOURS - newTotal))} to go for this week's pay.`);
+  if (hours >= LONG_SHIFT_HOURS) lines.push(randomQuote(PRAISE_QUOTES));
   return lines.join('\n');
 }
 

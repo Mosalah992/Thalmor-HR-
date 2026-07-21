@@ -4,6 +4,38 @@
 // cycle number, so the order looks random but every quote appears exactly
 // once per cycle (no back-to-back repeats).
 
+// Reused as live replies (see clock.js) in addition to the bulletin rotation.
+export const CLOCK_IN_QUOTES = [
+  'You have not clocked in. I had assumed you simply failed to arrive. The distinction grows increasingly academic.',
+  'The ledger remains empty beside your name. I wonder if your work ethic has followed it into oblivion.',
+  'One command. Two seconds. Somehow beyond your capabilities.',
+  'The Dominion conquered nations with greater efficiency than you manage your attendance.',
+  'Your absence from the ledger is less surprising than your continued employment.',
+  'I checked twice to ensure this was not a clerical error. It was not.',
+  'Even paperwork deserves more respect than you have afforded it today.',
+  'You remain unrecorded. Much like your accomplishments.',
+  'The ledger has waited patiently. I have not.',
+  'Remarkable. You have managed to disappoint both bureaucracy and me simultaneously.',
+];
+
+export const PRAISE_QUOTES = [
+  'Your performance was... acceptable. Treasure this moment. It will not recur often.',
+  'You have earned recognition. Do not mistake that for equality.',
+  'Competence is refreshing. Almost suspicious.',
+  'I find myself without criticism. An unpleasantly unfamiliar experience.',
+  'You have completed your responsibilities correctly. See that it does not become an isolated incident.',
+  'The Dominion acknowledges your effort. I do not advise growing comfortable.',
+  'Well done. I shall endeavor not to let this influence my opinion of the rest of you.',
+  'Efficiency is its own reward. Official recognition merely confirms what should have been obvious.',
+  'For once, the paperwork required no corrections. I nearly smiled.',
+  'You have met expectations. Try not to squander the achievement.',
+];
+
+/** Uniform random pick — used for live command replies (not the bulletin, which is seeded). */
+export function randomQuote(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 export const QUOTES = [
   // ─── Missed clock-in / clock-out ───
   'You forgot to clock in. Or perhaps you simply believed the ledger would not notice. It notices everything.',
@@ -49,6 +81,72 @@ export const QUOTES = [
   "It's like being propositioned by a 6 when you're hoping for a 9 or a 10, but it's late at night, and you just don't care anymore. — Thorgim Hammersmite, moments before his execution",
   "So, y'all come here often? Uh, somewhat — sometimes I like to come on the floor. — Overheard at the embassy gates",
   'I thrive off negativity. — Lady Nyssara',
+
+  // ─── Clock in (also served as /clockout-without-a-shift replies) ───
+  ...CLOCK_IN_QUOTES,
+
+  // ─── Clock out ───
+  'You neglected to clock out. I presume you also intended to leave your thoughts unfinished.',
+  'Your shift remains open. I can only conclude your competence does as well.',
+  'The ledger cannot close what you refuse to acknowledge.',
+  'You departed without recording your time. A fitting metaphor for your entire career.',
+  'Some agents leave behind excellence. You leave behind unresolved paperwork.',
+  'I am forced to finish yet another task you abandoned. This is becoming a pattern.',
+  'The Dominion values precision. You appear committed to experimentation.',
+  'You escaped the building. Unfortunately, not the paperwork.',
+  'I expected negligence. You continue to exceed expectations.',
+  'The ledger remembers every omission. I encourage you to develop the same habit.',
+
+  // ─── Late clock in ───
+  'You arrived eventually. History records similar achievements for mudcrabs.',
+  'The sun had already begun its work before you considered beginning yours.',
+  'Late, once again. I trust mediocrity was worth the delay.',
+  'I see punctuality continues to regard you as a stranger.',
+  'You have mistaken the schedule for a polite suggestion.',
+  'I wondered whether you had resigned. That would have been the more respectable explanation.',
+  'Time obeys no one. It appears you obey it least of all.',
+  'Another late arrival. At this point I simply adjust my expectations downward.',
+  'I have seen Breton diplomacy arrive sooner.',
+  'You finally appear. The ledger nearly recovered from the anticipation.',
+
+  // ─── Weekly hours ───
+  'You failed to complete even the minimum expected of you. How reassuringly predictable.',
+  'Eight hours should not qualify as an insurmountable obstacle.',
+  'Your weekly total suggests either extraordinary laziness or remarkable talent for avoiding accountability.',
+  'The ledger offers no sympathy for unrealized potential.',
+  'I reviewed your hours in hopes of discovering an explanation. I found only arithmetic.',
+  'You have contributed less this week than the embassy furniture.',
+  'The Dominion requested diligence. You submitted excuses.',
+  'Numbers rarely lie. Yours simply surrender.',
+  'I expected little. You continue to negotiate downward.',
+  'Your attendance could generously be described as decorative.',
+
+  // ─── Embassy announcements ───
+  'The embassy remains standing despite your collective efforts to prove otherwise.',
+  'I remind all personnel that setting fire to official property is not recognized as maintenance.',
+  'The healing ward reports another busy week. Curiously, productivity remains unchanged.',
+  'The quartermaster requests that agents stop losing issued equipment to wildlife. Again.',
+  'The kitchens report a shortage of wine. I assume several of you have mistaken diplomacy for recreation.',
+  'The inspection has concluded. Predictably, the building demonstrated greater discipline than its occupants.',
+  'Should anyone discover a functioning attention span, kindly return it to the main hall.',
+  'The archives remain in exemplary condition. Avoid touching them.',
+  'I congratulate those who completed their duties today. This message concerns very few of you.',
+  'The embassy has survived another week. Credit will be assigned elsewhere.',
+
+  // ─── Promotions & praise (also served as long-shift /clockout replies) ───
+  ...PRAISE_QUOTES,
+
+  // ─── Random Ancanoisms ───
+  'I have encountered Daedra with superior administrative discipline.',
+  'If disappointment could be weaponized, this embassy would be invincible.',
+  'The paperwork survives every crisis. A distinction several of you should envy.',
+  'I grow increasingly convinced that gravity employs more capable agents.',
+  'Every report I read lowers the average intelligence of the room.',
+  "I had hoped today's briefing would contain surprises. It did. None were pleasant.",
+  'The Altmer perfected civilization. You appear determined to conduct independent research.',
+  'I continue to marvel that breathing requires no written instructions.',
+  'The Empire fell with greater dignity than some of you submit paperwork.',
+  'One day you may justify the ink spent recording your existence. Today is not that day.',
 ];
 
 const SLOT_MS = 3 * 60 * 60 * 1000; // one quote per 3-hour cron slot
