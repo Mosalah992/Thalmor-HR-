@@ -26,7 +26,7 @@ export const QUOTES = [
 
   // ─── Auramon Nuramor and the barracks windows ───
   "Agent Auramon Nuramor was found 'testing' something combustible near the barracks. The windows did not survive the test. His next pay will.",
-  'Auramon Nuramor has been informed, calmly, that explosives are not a substitute for competence. The glaziers have been informed less calmly, and billed accordingly — to him.',
+  'Auramon Nuramor has been informed, calmly, that Fire runes are not a substitute for competence. The glaziers have been informed less calmly, and billed accordingly — to him.',
   'The barracks have new windows. Agent Nuramor has a smaller paycheck. The Dominion considers this a fair exchange, and a lesson he will not need repeating.',
 
   // ─── Lady Celeriel carrying the embassy ───
@@ -38,7 +38,7 @@ export const QUOTES = [
   "Senior Staff Rivi has healed most of this embassy's soldiers this month. Whether through medicine or through purring remains unclear. I did not ask further.",
   'First Emissary Ganaril requires all agents who forgot to clock in to report to his office. Bring your own burn ointment. He will not provide it twice.',
   'Former Emissary Malen is no longer with us, having been struck by a Dremora. The Dominion records this as an unfortunate outcome, and an entirely avoidable one.',
-  "Lord Lakkon's entire contribution to today's briefing was 'FIREBALL.' The Dominion has chosen not to elaborate.",
+  "Lord Lakkon's entire contribution to today's briefing was 'FIREBALL.' That is, apparently, all you need to know.",
 
   // ─── Overheard around the embassy ───
   "If you'd had any nuts we'd have survived, orc. — Nelos Onmar",
