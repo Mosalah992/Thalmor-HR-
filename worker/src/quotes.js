@@ -71,6 +71,19 @@ export const QUOTES = [
   // ─── Thorandale and the garlic bread ───
   "Agent Thorandale's devotion to garlic bread now borders on the alchemical. Administrator Ancarion has confirmed, in writing, that the next time he catches him sniffing garlic in the kitchens, he will be thrown to Pookie. The Dominion considers this warning sufficient.",
 
+  // ─── Lady Nyssara ───
+  'Lady Nyssara carries herself as though this embassy were built in her honor. I have consulted the records. It was not. I have elected not to inform her.',
+  "Do not mistake Lady Nyssara's rare moments of warmth for weakness. The last agent who did is remembered fondly, and briefly.",
+  'I presented Lady Nyssara with two options and watched her choose a third I had not offered. It was also the better one. I have said nothing further on the matter.',
+  'Auri-El bless Lady Nyssara and all her doings.',
+  'All 16 of the Nuramors are now my concubines. — Lady Nyssara',
+
+  // ─── Lord Annatar Larethiane ───
+  "I'll turn you into a pillar of salt, don't test me. — Lord Annatar",
+  'Lord Annatenderloin is mighty delicious.',
+  'You tried to fight back. I expected more of you. — Lord Annatar, maybe',
+  'Praise Sanguine. — Lord Annatar',
+
   // ─── Miscellaneous embassy dispatches ───
   "Senior Staff Rivi has healed most of this embassy's soldiers this month. Whether through medicine or through purring remains unclear. I did not ask further.",
   'First Emissary Ganaril requires all agents who forgot to clock in to report to his office. Bring your own burn ointment. He will not provide it twice.',
