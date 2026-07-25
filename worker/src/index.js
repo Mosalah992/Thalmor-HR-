@@ -309,7 +309,7 @@ async function handleCommand(interaction, env, ctx) {
   return json({ type: 5 }); // deferred — Discord shows "thinking…" and we edit in
 }
 
-/** Cron (every 3 h): post the next embassy bulletin quote to #clock-in. */
+/** Cron (every 2 h): post the next embassy bulletin quote to #clock-in. */
 async function postBulletin(env, scheduledTime) {
   const content = quoteForTime(scheduledTime);
   const res = await fetch(`https://discord.com/api/v10/channels/${env.CLOCKIN_CHANNEL_ID}/messages`, {

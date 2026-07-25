@@ -42,8 +42,8 @@ than 7 days.
 
 ## Embassy bulletin
 
-Every 3 hours a quote in Justiciar Ancano's voice is posted to `#clock-in`, drawn
-from the ~100-line rotation in [worker/src/quotes.js](worker/src/quotes.js). Each
+Every 2 hours a quote in Justiciar Ancano's voice is posted to `#clock-in`, drawn
+from the ~110-line rotation in [worker/src/quotes.js](worker/src/quotes.js). Each
 full pass through the list is shuffled deterministically (seeded by the cycle
 number), so the order looks random but no quote repeats until every other has
 posted. Two of its sets double as the live `/clockout` replies above. **Editing
@@ -76,7 +76,7 @@ cd worker && npx wrangler@3 deploy  # deploy (wrangler 3 — Node 18 can't run w
 
 Worker secrets (`npx wrangler@3 secret put …` from `worker/`): `DISCORD_PUBLIC_KEY`,
 `GOOGLE_SERVICE_ACCOUNT_JSON`, `DISCORD_BOT_TOKEN`. Vars and the three cron triggers
-(3-hourly bulletin; Mondays 08:30 UTC Owed clear and 09:00 UTC / 3 AM CST close-out)
+(2-hourly bulletin; Mondays 08:30 UTC Owed clear and 09:00 UTC / 3 AM CST close-out)
 live in [worker/wrangler.toml](worker/wrangler.toml).
 The app's Interactions Endpoint URL points at the Worker
 (`https://thalmor-quartermaster.salaz4r.workers.dev`).

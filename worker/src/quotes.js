@@ -1,4 +1,4 @@
-// Embassy bulletin quotes — posted to #clock-in every 3 hours by the cron
+// Embassy bulletin quotes — posted to #clock-in every 2 hours by the cron
 // trigger, written in the voice of Justiciar Ancano. Randomized rotation:
 // each full pass through the list is shuffled with a seed derived from the
 // cycle number, so the order looks random but every quote appears exactly
@@ -166,7 +166,7 @@ export const QUOTES = [
   'One day you may justify the ink spent recording your existence. Today is not that day.',
 ];
 
-const SLOT_MS = 3 * 60 * 60 * 1000; // one quote per 3-hour cron slot
+const SLOT_MS = 2 * 60 * 60 * 1000; // one quote per 2-hour cron slot
 
 /** mulberry32 — tiny deterministic PRNG, good enough for shuffling quotes. */
 function prng(seed) {
@@ -192,7 +192,7 @@ function shuffledOrder(n, seed) {
 }
 
 /**
- * Deterministic randomized pick: consecutive 3-hour slots walk a per-cycle
+ * Deterministic randomized pick: consecutive 2-hour slots walk a per-cycle
  * shuffle of the list, reshuffled every full pass.
  */
 export function quoteForTime(ms) {
