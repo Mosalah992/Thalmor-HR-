@@ -61,25 +61,24 @@ export const QUOTES = [
   'Auramon Nuramor has been informed, calmly, that Fire runes are not a substitute for competence. The glaziers have been informed less calmly, and billed accordingly — to him.',
   'The barracks have new windows. Agent Nuramor has a smaller paycheck. The Dominion considers this a fair exchange, and a lesson he will not need repeating.',
 
-  // ─── Lady Celeriel carrying the embassy ───
-  'Lady Celeriel manages the ledger, the inspections, and apparently the collective attention span of this embassy. You cannot manage eight hours.',
-  "While Lady Celeriel conducts inspections and keeps the Dominion's paperwork from collapsing entirely, several of you cannot locate the clock-in command. I have reviewed both tasks. Only one of you is struggling.",
-  'Lady Celeriel juggles administration and inspection without complaint. You are asked only to press a button twice a day. Draw your own comparison.',
+  // ─── Talon Alduril ───
+  'Talon Alduril remains the finest archer in the Thalmor. I have reviewed the range records personally. The rest of you may stop pretending it is a competition.',
+  'Alduril has been declared the prettiest Talon in this embassy. I did not commission the survey, I do not know who did, and yet I find no grounds on which to dispute its findings.',
+  "Alduril's arrows land precisely where intended, every time. I encourage the rest of you to develop a similar relationship with your paperwork.",
 
   // ─── Miscellaneous embassy dispatches ───
   "Senior Staff Rivi has healed most of this embassy's soldiers this month. Whether through medicine or through purring remains unclear. I did not ask further.",
   'First Emissary Ganaril requires all agents who forgot to clock in to report to his office. Bring your own burn ointment. He will not provide it twice.',
   'Former Emissary Malen is no longer with us, having been struck by a Dremora. The Dominion records this as an unfortunate outcome, and an entirely avoidable one.',
   "Lord Lakkon's entire contribution to today's briefing was 'FIREBALL.' That is, apparently, all you need to know.",
+  'The Aldmeri Dominion would like to remind you that First Emissary is not a summer job. The four different Emissaries in the last month were a mere and unfortunate coincidence.',
+  'The payment is never late, nor is it early, it arrives precisely when it is supposed to.',
+  'The Thalmor are living proof that the Graveyard Shift did not get that name for its lack of soldiers, but for the amount of Talos heretics burned to ashes.',
+  "Khajussy is not an official term recognized by Tamrielic, Ta'Agra or Aldmeris dictionaries. Its effects on our agents is currently being investigated.",
+  'Reminder that "I can fix her" is not an approved tactic to fight against cultists, vampires and werewolves.',
 
   // ─── Overheard around the embassy ───
   "If you'd had any nuts we'd have survived, orc. — Nelos Onmar",
-  'Wait! My friend, my friend, my friend... WE MUST KILL THIS MAN. — Demetrius and the Vigilants',
-  'Is it just me, or is one in three Thalmor a Talos kisser? — Cobble',
-  "Life is like a wiener: it gets hard sometimes for no reason, but it doesn't stay hard for long. — Annatar Larethiane",
-  'You find yourself with a dirty condom in your ass. Do you tell anyone? No... want to go camping? — Verux',
-  "It's like being propositioned by a 6 when you're hoping for a 9 or a 10, but it's late at night, and you just don't care anymore. — Thorgim Hammersmite, moments before his execution",
-  "So, y'all come here often? Uh, somewhat — sometimes I like to come on the floor. — Overheard at the embassy gates",
   'I thrive off negativity. — Lady Nyssara',
 
   // ─── Clock in (also served as /clockout-without-a-shift replies) ───
