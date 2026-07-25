@@ -65,6 +65,11 @@ export const QUOTES = [
   'Talon Alduril remains the finest archer in the Thalmor. I have reviewed the range records personally. The rest of you may stop pretending it is a competition.',
   'Alduril has been declared the prettiest Talon in this embassy. I did not commission the survey, I do not know who did, and yet I find no grounds on which to dispute its findings.',
   "Alduril's arrows land precisely where intended, every time. I encourage the rest of you to develop a similar relationship with your paperwork.",
+  "Talon Alduril's sweetroll consumption has been reclassified from 'sweet tooth' to 'supply concern.' A dentist has been summoned from Alinor. The embassy pastry budget will observe a moment of silence.",
+  'Personnel are advised not to mention sweetrolls in the presence of Talon Alduril. The last agent who did lost the sweetroll, and very nearly the hand holding it.',
+
+  // ─── Thorandale and the garlic bread ───
+  "Agent Thorandale's devotion to garlic bread now borders on the alchemical. Administrator Ancarion has confirmed, in writing, that the next time he catches him sniffing garlic in the kitchens, he will be thrown to Pookie. The Dominion considers this warning sufficient.",
 
   // ─── Miscellaneous embassy dispatches ───
   "Senior Staff Rivi has healed most of this embassy's soldiers this month. Whether through medicine or through purring remains unclear. I did not ask further.",
